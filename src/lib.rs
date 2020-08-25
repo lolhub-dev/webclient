@@ -125,7 +125,6 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 
 fn view(model: &Model) -> Vec<Node<Msg>> {
     vec![
-        view_hero(),
         view_navbar(
             model.menu_visible,
             &model.base_url,
@@ -136,24 +135,10 @@ fn view(model: &Model) -> Vec<Node<Msg>> {
     ]
 }
 
-fn view_hero() -> Node<Msg> {
-    section![
-        C!["hero", "is-primary", "is-bold"],
-        div![
-            C!["hero-body"],
-            div![
-                C!["container", "has-text-centered"],
-                h1![C!["title"], "lol:Hub"],
-            ],
-        ],
-    ]
-}
-
 // ----- view_content ------
 
 fn view_content(page: &Page) -> Node<Msg> {
     div![
-        C!["container"],
         match page {
             Page::Home => page::home::view(),
             Page::Profile(model) => page::profile::view(model).map_msg(Msg::ProfileMsg),

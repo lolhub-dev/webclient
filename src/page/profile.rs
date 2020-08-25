@@ -45,6 +45,6 @@ pub fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
 //      View 
 // ----------------
 
-pub fn view<Ms>(model: &Model) -> Node<Ms> {
-    div!["Profile view"]
+pub fn view<Ms>(model: &Model) -> Vec<Node<Ms>> {
+    vec![div!["Profile view"]]
 }
