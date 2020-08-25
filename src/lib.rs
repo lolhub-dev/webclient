@@ -279,5 +279,6 @@ fn view_buttons_for_anonymous_user() -> Vec<Node<Msg>> {
 // ------ ------
 #[wasm_bindgen(start)]
 pub fn start() {
+    console_error_panic_hook::set_once();
     App::start("app", init, update, view);
 }
