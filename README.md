@@ -74,3 +74,6 @@
 **!!! New Rust-only quickstart in development! => [Seeder](https://github.com/MartinKavik/seeder) !!!**
 
 ---
+
+## Other interesting resources:
+https://rustwasm.github.io/book/reference/deploying-to-production.html
