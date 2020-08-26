@@ -22,6 +22,8 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         },
         base_url: url.to_base_url(),
         menu_visible: true,
+        login_modal_visible: false,
+        login_modal_register_tab_active: false,
         page: Page::Home,
     }
 }
@@ -32,8 +34,10 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
 struct Model {
     ctx: Context,
     base_url: Url,
-    menu_visible: bool,
     page: Page,
+    menu_visible: bool,
+    login_modal_visible: bool,
+    login_modal_register_tab_active: bool,
 }
 
 struct Context {
@@ -95,6 +99,9 @@ impl<'a> Urls<'a> {
 enum Msg {
     UrlChanged(subs::UrlChanged),
     ToggleMenu,
+    ToggleLoginModal,
+    RegisterTabActive,
+    LoginTabActive,
     HideMenu,
     LogIn,
     LogOut,
@@ -106,6 +113,9 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
         Msg::UrlChanged(subs::UrlChanged(url)) => model.page = Page::init(url, orders),
         Msg::ToggleMenu => model.menu_visible = !model.menu_visible,
+        Msg::ToggleLoginModal => model.login_modal_visible = !model.login_modal_visible,
+        Msg::RegisterTabActive => model.login_modal_register_tab_active = true,
+        Msg::LoginTabActive => model.login_modal_register_tab_active = false,
         Msg::HideMenu => model.menu_visible = false,
         Msg::LogIn => log!("logIn message"),
         Msg::LogOut => log!("logOut message"),
@@ -134,6 +144,11 @@ fn view(model: &Model) -> Vec<Node<Msg>> {
         ),
         div![C!["content-wrapper"], view_content(&model.page)], //enable sticky footer
         view_footer(),
+        // MODALS:
+        view_login_or_register_modal(
+            model.login_modal_visible,
+            model.login_modal_register_tab_active
+        )
     ]]
 }
 
@@ -264,12 +279,12 @@ fn view_buttons_for_anonymous_user() -> Vec<Node<Msg>> {
         a![
             C!["button", "is-primary"],
             strong!["Sign up"],
-            ev(Ev::Click, |_| Msg::SignUp),
+            ev(Ev::Click, |_| Msg::ToggleLoginModal),
         ],
         a![
             C!["button", "is-light"],
             "Log in",
-            ev(Ev::Click, |_| Msg::LogIn),
+            ev(Ev::Click, |_| Msg::ToggleLoginModal),
         ],
     ]
 }
@@ -281,6 +296,70 @@ fn view_footer() -> Node<Msg> {
     ]
 }
 
+fn view_login_or_register_modal(visible: bool, register_tab_active: bool) -> Node<Msg> {
+    let login_modal_content = div![
+        C!["modal-content"],
+        div![
+            C!["tabs"],
+            ul![
+                li![
+                    C![IF![!register_tab_active =>"is_active"]],
+                    a!["Login"],
+                    ev(Ev::Click, |event| {
+                        event.stop_propagation();
+                        Msg::RegisterTabActive
+                    })
+                ],
+                li![
+                    C![IF![register_tab_active =>"is_active"]],
+                    a!["Register"],
+                    ev(Ev::Click, |event| {
+                        event.stop_propagation();
+                        Msg::LoginTabActive
+                    })
+                ]
+            ]
+        ],
+        IF![register_tab_active =>view_login_component()],
+        IF![!register_tab_active =>view_register_component()]
+    ];
+    let login_modal_toggle_handler = ev(Ev::Click, |event| {
+        event.stop_propagation();
+        Msg::ToggleLoginModal
+    });
+    div![
+        C!["modal", IF![visible => "is-active"]],
+        div![C!["modal-background"], login_modal_toggle_handler.clone()],
+        login_modal_content,
+        button![
+            C!["modal-close", "is-large",],
+            attrs! {At::AriaLabel=>"close"},
+            login_modal_toggle_handler
+        ]
+    ]
+}
+
+fn view_login_component() -> Node<Msg> {
+    div![
+        C!["field"],
+        p![
+            C!["control", "has-icons-left", "has-icons-right"],
+            input![
+                C!["input"],
+                attrs![At::from("placeholder")=>"Email", At::from("type")=>"email"]
+            ],
+            span![
+                C!["icon", "is-small", "is-left"],
+                i![C!["fas", "fa-envelope"]]
+            ],
+            span![C!["icon", "is-small", "is-left"], i![C!["fas", "fa-check"]]]
+        ]
+    ]
+}
+
+fn view_register_component() -> Node<Msg> {
+    a!["Register Component"]
+}
 // ------ ------
 //     Start
 // ------ ------
