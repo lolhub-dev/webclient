@@ -1,12 +1,17 @@
 use seed::{prelude::*, *};
 
-use crate::User;
+pub struct Model;
+pub enum Msg {
+
+}
 
 // ----------------
 //     Init
 // ----------------
 
-pub fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {}
+pub fn init(_: Url, _: &mut impl Orders<Msg>) -> Model {
+    Model
+}
 
 // ----------------
 //    Model
@@ -18,7 +23,7 @@ pub fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {}
 //    Update
 // ----------------
 
-pub fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
+pub fn update(msg: Msg, _: &mut Model, _: &mut impl Orders<Msg>) {
     match msg {}
 }
 
@@ -26,6 +31,6 @@ pub fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
 //      View
 // ----------------
 
-pub fn view<Ms>(model: &Model) -> Vec<Node<Ms>> {
+pub fn view<Ms>(_: &Model) -> Vec<Node<Ms>> {
     vec![div![C!["container", "contentainer"], "Profile view"]]
 }
