@@ -13,6 +13,14 @@
     flex: 1;
 }
 
+.contentainer {
+    padding: 15px;
+}
+
+.is-paragraph {
+    margin-bottom: 2em;
+}
+
 .has-bg-img {
     background-image: url('https://img9.uhdpixel.com/wp/a/7/oktoberfest-gragas-lol-splash-art-league-of-legends-a739.jpg')
         center center;

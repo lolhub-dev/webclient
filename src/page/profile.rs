@@ -14,6 +14,7 @@ pub fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
 }
 
 // ----------------
+//    Model
 // ----------------
 pub struct Model {
     errors: Vec<FetchError>,
@@ -27,7 +28,7 @@ enum RemoteData<T> {
 }
 
 // ----------------
-//    Update 
+//    Update
 // ----------------
 
 pub enum Msg {
@@ -42,9 +43,9 @@ pub fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
 }
 
 // ----------------
-//      View 
+//      View
 // ----------------
 
 pub fn view<Ms>(model: &Model) -> Vec<Node<Ms>> {
-    vec![div!["Profile view"]]
+    vec![div![C!["container", "contentainer"], "Profile view"]]
 }
