@@ -1,3 +1,19 @@
 .navbar {
-    background: black;
+    background: white;
+}
+
+/* This enables the sticky footer*/
+.page-wrapper {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+.content-wrapper {
+    flex: 1;
+}
+
+.has-bg-img {
+    background-image: url('https://img9.uhdpixel.com/wp/a/7/oktoberfest-gragas-lol-splash-art-league-of-legends-a739.jpg')
+        center center;
 }

@@ -124,27 +124,27 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 // ------ ------
 
 fn view(model: &Model) -> Vec<Node<Msg>> {
-    vec![
+    vec![div![
+        C!["page-wrapper"], //enable sticky footer
         view_navbar(
             model.menu_visible,
             &model.base_url,
             model.ctx.user.as_ref(),
             &model.page,
         ),
-        view_content(&model.page),
-    ]
+        div![C!["content-wrapper"], view_content(&model.page)], //enable sticky footer
+        view_footer(),
+    ]]
 }
 
 // ----- view_content ------
 
 fn view_content(page: &Page) -> Node<Msg> {
-    div![
-        match page {
-            Page::Home => page::home::view(),
-            Page::Profile(model) => page::profile::view(model).map_msg(Msg::ProfileMsg),
-            Page::NotFound => page::not_found::view(),
-        }
-    ]
+    div![match page {
+        Page::Home => page::home::view(),
+        Page::Profile(model) => page::profile::view(model).map_msg(Msg::ProfileMsg),
+        Page::NotFound => page::not_found::view(),
+    }]
 }
 
 // ----- view_navbar ------
@@ -271,6 +271,13 @@ fn view_buttons_for_anonymous_user() -> Vec<Node<Msg>> {
             "Log in",
             ev(Ev::Click, |_| Msg::LogIn),
         ],
+    ]
+}
+
+fn view_footer() -> Node<Msg> {
+    footer![
+        C!["footer"],
+        div![C!["content", "has-text-centered"], p!["footer"]]
     ]
 }
 
