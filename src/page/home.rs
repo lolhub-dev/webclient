@@ -13,7 +13,7 @@ pub fn view<Ms>() -> Vec<Node<Ms>> {
 
 fn view_search<Ms>() -> Node<Ms> {
     div![
-        C!["container", "mt-6"],
+        C!["container", "contentainer"],
         div![
             C!["field", "has-addons",],
             div![
@@ -22,7 +22,7 @@ fn view_search<Ms>() -> Node<Ms> {
                     C!["input"],
                     attrs! {
                         At::from("type") => "text",
-                        At::from("placeholder") => "Search..."
+                        At::from("placeholder") => "Search for gamemodes..."
                     }
                 ]
             ],
