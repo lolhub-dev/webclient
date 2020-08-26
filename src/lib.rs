@@ -2,15 +2,18 @@
 
 use seed::{prelude::*, *};
 use serde::Deserialize;
-use ulid::Ulid;
 
+// Re-export components module so we can use it in page module
+pub mod components;
 mod page;
 
 const PROFILE: &str = "profile";
+const ABOUT: &str = "about";
 
 // ------ ------
 //     Init
 // ------ ------
+
 fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
     orders
         .subscribe(Msg::UrlChanged)
@@ -29,6 +32,7 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
 // ------ ------
 //     Model
 // ------ ------
+
 struct Model {
     ctx: Context,
     base_url: Url,
@@ -59,6 +63,7 @@ struct User {
 enum Page {
     Home,
     Profile(page::profile::Model),
+    About,
     NotFound,
 }
 
@@ -69,6 +74,7 @@ impl Page {
             [PROFILE] => {
                 Self::Profile(page::profile::init(url, &mut orders.proxy(Msg::ProfileMsg)))
             }
+            [ABOUT] => Self::About,
             _ => Self::NotFound,
         }
     }
@@ -85,6 +91,9 @@ impl<'a> Urls<'a> {
     }
     fn profile(self) -> Url {
         self.base_url().add_path_part(PROFILE)
+    }
+    fn about(self) -> Url {
+        self.base_url().add_path_part(ABOUT)
     }
 }
 
@@ -144,13 +153,14 @@ fn view_content(page: &Page) -> Node<Msg> {
         Page::Home => page::home::view(),
         Page::Profile(model) => page::profile::view(model).map_msg(Msg::ProfileMsg),
         Page::NotFound => page::not_found::view(),
+        Page::About => page::about::view(),
     }]
 }
 
 // ----- view_navbar ------
 fn view_navbar(menu_visible: bool, base_url: &Url, user: Option<&User>, page: &Page) -> Node<Msg> {
     nav![
-        C!["navbar"],
+        C!["navbar", "is-dark"],
         attrs! {
             At::from("role") => "navigation",
             At::AriaLabel => "main navigation",
@@ -221,6 +231,15 @@ fn view_navbar_menu_start(base_url: &Url, page: &Page) -> Node<Msg> {
             ],
             attrs! {At::Href => Urls::new(base_url).profile()},
             "Profile",
+        ],
+        a![
+            C![
+                "navbar-item",
+                "is-tab",
+                IF!(matches!(page, Page::About) => "is-active"),
+            ],
+            attrs! {At::Href => Urls::new(base_url).about()},
+            "About",
         ],
     ]
 }
