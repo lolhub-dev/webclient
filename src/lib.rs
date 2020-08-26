@@ -317,30 +317,33 @@ fn view_footer() -> Node<Msg> {
 
 fn view_login_or_register_modal(visible: bool, register_tab_active: bool) -> Node<Msg> {
     let login_modal_content = div![
-        C!["modal-content"],
+        C!["modal-card"],
         div![
-            C!["tabs"],
-            ul![
-                li![
-                    C![IF![!register_tab_active =>"is_active"]],
-                    a!["Login"],
-                    ev(Ev::Click, |event| {
-                        event.stop_propagation();
-                        Msg::RegisterTabActive
-                    })
-                ],
-                li![
-                    C![IF![register_tab_active =>"is_active"]],
-                    a!["Register"],
-                    ev(Ev::Click, |event| {
-                        event.stop_propagation();
-                        Msg::LoginTabActive
-                    })
+            C!["modal-card-body"],
+            div![
+                C!["tabs"],
+                ul![
+                    li![
+                        C![IF![!register_tab_active =>"is_active"]],
+                        a!["Login"],
+                        ev(Ev::Click, |event| {
+                            event.stop_propagation();
+                            Msg::RegisterTabActive
+                        })
+                    ],
+                    li![
+                        C![IF![register_tab_active =>"is_active"]],
+                        a!["Register"],
+                        ev(Ev::Click, |event| {
+                            event.stop_propagation();
+                            Msg::LoginTabActive
+                        })
+                    ]
                 ]
-            ]
-        ],
-        IF![register_tab_active =>view_login_component()],
-        IF![!register_tab_active =>view_register_component()]
+            ],
+            IF![register_tab_active =>view_login_component()],
+            IF![!register_tab_active =>view_register_component()]
+        ]
     ];
     let login_modal_toggle_handler = ev(Ev::Click, |event| {
         event.stop_propagation();
