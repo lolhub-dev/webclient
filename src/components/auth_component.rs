@@ -209,18 +209,18 @@ fn view_register(
                 C!["help", "is-danger"],
             ]]
         ],
-        div![
-            label![
-                C!["checkbox"],
-                input![attrs![At::from("type") => "checkbox"],],
-                " I agree to the ",
-                a!["terms and conditions"],
+        div![label![
+            C!["checkbox"],
+            input![
+                attrs![At::from("type") => "checkbox"],
+                ev(Ev::Click, |event| {
+                    event.stop_propagation();
+                    Msg::ToggleRegisterAcceptedTou
+                })
             ],
-            ev(Ev::Click, |event| {
-                event.stop_propagation();
-                Msg::ToggleRegisterAcceptedTou
-            })
-        ],
+            " I agree to the ",
+            a!["terms and conditions"],
+        ],],
         nav![
             C!["level"],
             div![
