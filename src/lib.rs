@@ -5,6 +5,12 @@ use serde::Deserialize;
 
 // Re-export components module so we can use it in page module
 pub mod components;
+pub mod domain; 
+pub mod driver;
+pub mod gateway;
+pub mod port;
+pub mod usecase;
+
 mod page;
 mod utils;
 use crate::components::auth_component;
