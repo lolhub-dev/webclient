@@ -52,19 +52,31 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
 
 pub enum Msg {
     UrlChanged(subs::UrlChanged),
+
+    // Navbar
     ToggleMenu,
+    HideMenu,
+
+    // Login buttons
+    LogIn,
+    LogOut,
+    SignUp,
+
+    // Login modal visibility
+    // @TODO: Could change this to HideLoginModal and then send this from auth_component
     ToggleLoginModal,
+    // @TODO Send these messages from the respective button in the navbar
     RegisterTabActive,
     LoginTabActive,
+
+    // Login/Register form
     ChangeRegisterEmailValue(String),
     ChangeRegisterUsernameValue(String),
     ChangeRegisterPasswordValue(String),
     ChangeRegisterPasswordCompValue(String),
     ToggleRegisterAcceptedTou,
-    HideMenu,
-    LogIn,
-    LogOut,
-    SignUp,
+
+    // Routing messages
     ProfileMsg(page::profile::Msg),
 }
 
@@ -77,6 +89,34 @@ struct Model {
     base_url: Url,
     page: Page,
     menu_visible: bool,
+    // @TODO: Refactor (?) Should probably encapsulate all the register and login related
+    // stuff in a separate struct.  Something like
+    //
+    // struct Model {
+    //    ...
+    //    register_context: RegisterContext
+    //    ...
+    // }
+    //
+    // and then
+    //
+    // struct RegisterContext {
+    //     email: String,
+    //     username: String,
+    //     password: String,
+    //     password_comp: String,
+    //     accepted_tou: bool
+    // }
+    //
+    // Maybe also LoginModalState like
+    //
+    // enum LoginModelState {
+    //     Hidden,
+    //     VisibleRegister,
+    //     VisibleLogin
+    // }
+    //
+    // to reduce the number of booleans in our model
     login_modal_visible: bool,
     login_modal_register_tab_active: bool,
     register_email_value: String,
@@ -92,6 +132,22 @@ struct Context {
     token: Option<String>,
 }
 
+struct RegisterContext {
+    email: String,
+    username: String,
+    password: String,
+    password_comp: String,
+    accepted_tou: bool,
+}
+
+enum LoginModalState {
+    Hidden,
+    VisibleLogin,
+    VisibleRegister
+}
+
+// @TODO: Should we just use the User struct from the user domain ?
+// #SingleSourceOfTruth
 #[derive(Deserialize, Debug)]
 struct User {
     username: String,
@@ -150,9 +206,22 @@ impl<'a> Urls<'a> {
 fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
         Msg::UrlChanged(subs::UrlChanged(url)) => model.page = Page::init(url, orders),
+
+        // Navbar visibility
         Msg::ToggleMenu => model.menu_visible = !model.menu_visible,
+        Msg::HideMenu => model.menu_visible = false,
+
+        // Login buttons
+        Msg::LogIn => log!("logIn message"),
+        Msg::LogOut => log!("logOut message"),
+        Msg::SignUp => log!("signUp message"),
+
+        // Login modal visibility
         Msg::ToggleLoginModal => model.login_modal_visible = !model.login_modal_visible,
         Msg::RegisterTabActive => model.login_modal_register_tab_active = true,
+        Msg::LoginTabActive => model.login_modal_register_tab_active = false,
+
+        // Login/Register form
         Msg::ChangeRegisterEmailValue(email_address) => model.register_email_value = email_address,
         Msg::ChangeRegisterUsernameValue(username) => model.register_username_value = username,
         Msg::ChangeRegisterPasswordValue(password) => model.register_password_value = password,
@@ -162,12 +231,8 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         Msg::ToggleRegisterAcceptedTou => {
             model.register_accepted_tou = !model.register_accepted_tou
         }
-        Msg::LoginTabActive => model.login_modal_register_tab_active = false,
-        Msg::HideMenu => model.menu_visible = false,
-        Msg::LogIn => log!("logIn message"),
-        Msg::LogOut => log!("logOut message"),
-        Msg::SignUp => log!("signUp message"),
 
+        // Routing related
         Msg::ProfileMsg(msg) => {
             if let Page::Profile(model) = &mut model.page {
                 page::profile::update(msg, model, &mut orders.proxy(Msg::ProfileMsg))
@@ -192,6 +257,7 @@ fn view(model: &Model) -> Vec<Node<Msg>> {
         div![C!["content-wrapper"], view_content(&model.page)], //enable sticky footer
         view_footer(),
         // MODALS:
+        // @TODO: Refactor would greatly reduce the verbosity here
         auth_component::view(
             model.login_modal_visible,
             model.login_modal_register_tab_active,
