@@ -23,9 +23,9 @@ impl UserPort for MockUserGateway {
         let users = get_users();
         let ret_user = users
             .into_iter()
-            .filter(|user| match credentials.name_or_email {
-                UNameOrEmail::Username(uname) => user.username == uname,
-                UNameOrEmail::Email(email) => user.email == email,
+            .filter(|user| match &credentials.name_or_email {
+                UNameOrEmail::Username(uname) => user.username == *uname,
+                UNameOrEmail::Email(email) => user.email == *email,
             })
             .next();
 
