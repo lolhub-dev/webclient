@@ -4,7 +4,7 @@ use crate::port::user_port::{AuthResult, UserPort};
 pub struct UserGateway;
 
 impl UserPort for UserGateway {
-    fn login(&self, credentials: Credentials) -> AuthResult<User> {
+    fn login(&self, credentials: &Credentials) -> AuthResult<User> {
         Ok(User::default())
     }
 

@@ -19,7 +19,7 @@ fn get_users() -> Vec<User> {
 }
 
 impl UserPort for MockUserGateway {
-    fn login(&self, credentials: Credentials) -> AuthResult<User> {
+    fn login(&self, credentials: &Credentials) -> AuthResult<User> {
         let users = get_users();
         let ret_user = users
             .into_iter()
