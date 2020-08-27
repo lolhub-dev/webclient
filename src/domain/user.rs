@@ -11,6 +11,7 @@ pub struct User {
     email: String,
 }
 
+#[derive(Debug)]
 pub enum UNameOrEmail {
     Username(String),
     Email(String)

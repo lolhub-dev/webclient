@@ -1,5 +1,3 @@
-use crate::domain::user;
-
 type AuthResult<T> = Result<T, Error>;
 
 pub trait UserPort {
