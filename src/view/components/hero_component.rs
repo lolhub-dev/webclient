@@ -1,6 +1,6 @@
 use seed::{prelude::*, *};
 
-pub fn view_hero<Ms>() -> Node<Ms> {
+pub fn view<Ms>() -> Node<Ms> {
     div![
         C!["hero", "is-medium", "is-light", "is-bold", "has-bg-img"],
         div![

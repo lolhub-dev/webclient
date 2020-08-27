@@ -1,15 +1,13 @@
+use crate::view::components::hero_component;
 use seed::{prelude::*, *};
 
-use crate::components;
-
 // ----------------
-//     view 
+//     view
 // ----------------
 
 pub fn view<Ms>() -> Vec<Node<Ms>> {
-    vec![components::view_hero(), view_search()]
+    vec![hero_component::view(), view_search()]
 }
-
 
 fn view_search<Ms>() -> Node<Ms> {
     div![
