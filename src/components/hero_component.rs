@@ -1,6 +1,7 @@
+use crate::Msg;
 use seed::{prelude::*, *};
 
-pub fn view<Ms>() -> Node<Ms> {
+pub fn view() -> Node<Msg> {
     div![
         C!["hero", "is-medium", "is-light", "is-bold", "has-bg-img"],
         div![

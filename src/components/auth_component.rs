@@ -1,5 +1,5 @@
 use crate::utils;
-use crate::view::messages::Msg;
+use crate::Msg;
 use seed::{prelude::*, *};
 
 pub fn view(

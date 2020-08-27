@@ -4,10 +4,10 @@ use seed::{prelude::*, *};
 use serde::Deserialize;
 
 // Re-export components module so we can use it in page module
+pub mod components;
 mod page;
 mod utils;
-pub mod view;
-use crate::view::{components::auth_component, messages::Msg};
+use crate::components::auth_component;
 
 const PROFILE: &str = "profile";
 const ABOUT: &str = "about";
@@ -34,6 +34,26 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         register_password_value: String::from(""),
         page: Page::Home,
     }
+}
+
+// ------ ------
+//   Messages
+// ------ ------
+
+pub enum Msg {
+    UrlChanged(subs::UrlChanged),
+    ToggleMenu,
+    ToggleLoginModal,
+    RegisterTabActive,
+    LoginTabActive,
+    ChangeRegisterEmailValue(String),
+    ChangeRegisterUsernameValue(String),
+    ChangeRegisterPasswordValue(String),
+    HideMenu,
+    LogIn,
+    LogOut,
+    SignUp,
+    ProfileMsg(page::profile::Msg),
 }
 
 // ------ ------

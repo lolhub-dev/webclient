@@ -1,15 +1,16 @@
-use crate::view::components::hero_component;
+use crate::components::hero_component;
+use crate::Msg;
 use seed::{prelude::*, *};
 
 // ----------------
 //     view
 // ----------------
 
-pub fn view<Ms>() -> Vec<Node<Ms>> {
+pub fn view() -> Vec<Node<Msg>> {
     vec![hero_component::view(), view_search()]
 }
 
-fn view_search<Ms>() -> Node<Ms> {
+fn view_search() -> Node<Msg> {
     div![
         C!["container", "contentainer"],
         div![
