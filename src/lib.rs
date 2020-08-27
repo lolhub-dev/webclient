@@ -110,7 +110,7 @@ struct Model {
     //
     // Maybe also LoginModalState like
     //
-    // enum LoginModelState {
+    // enum LoginModalState {
     //     Hidden,
     //     VisibleRegister,
     //     VisibleLogin
