@@ -17,8 +17,6 @@ pub fn init(_: Url, _: &mut impl Orders<Msg>) -> Model {
 //    Model
 // ----------------
 
-
-
 // ----------------
 //    Update
 // ----------------

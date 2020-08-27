@@ -2,7 +2,7 @@
 version = "0.1.0"
 name = "lolhub-webclient"
 repository = "https://github.com/seed-rs/seed-quickstart"
-authors = ["Daniel Gusenburger <danielgusenburger@online.de>"]
+authors = ["Daniel Gusenburger <danielgusenburger@online.de>", "Daniel Tabellion <lolhub.dev@gmail.com>"]
 description = "App Description"
 categories = ["category"]
 license = "MIT"
