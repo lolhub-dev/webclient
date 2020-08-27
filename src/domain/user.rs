@@ -1,8 +1,9 @@
-use ulid::Ulid;
+use uuid::Uuid;
+use serde::{Serialize, Deserialize};
 
-pub type UserId = Ulid;
+pub type UserId = Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     userid: UserId,
     username: String,
@@ -19,7 +20,7 @@ pub enum UNameOrEmail {
 
 #[derive(Debug)]
 pub struct Credentials {
-    nameOrEmail: UNameOrEmail,
+    name_or_email: UNameOrEmail,
     password: String
 }
 
