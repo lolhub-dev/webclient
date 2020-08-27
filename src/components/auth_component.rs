@@ -62,7 +62,7 @@ pub fn view(
     ]
 }
 
-fn view_login<Msg>() -> Node<Msg> {
+fn view_login() -> Node<Msg> {
     div![
         div![
             C!["image", "is-19by9", "is-paragraph"],
