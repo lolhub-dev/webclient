@@ -105,7 +105,14 @@ fn view_login() -> Node<Msg> {
                             C!["field"],
                             p![
                                 C!["control"],
-                                button![C!["button ", "is-success", "is-fullwidth"], "Login"]
+                                button![
+                                    C!["button ", "is-success", "is-fullwidth"],
+                                    "Login",
+                                    ev(Ev::Click, |event| {
+                                        event.stop_propagation();
+                                        Msg::LogIn
+                                    }),
+                                ]
                             ],
                         ]
                     ]

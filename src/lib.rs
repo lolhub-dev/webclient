@@ -1,6 +1,8 @@
 #![allow(clippy::wildcard_imports)]
 
+use crate::domain::user;
 use crate::gateway::mock::mock_user_gateway::MockUserGateway;
+use crate::port::user_port::AuthResult;
 use seed::{prelude::*, *};
 use serde::Deserialize;
 
@@ -19,7 +21,7 @@ use crate::components::auth_component;
 const PROFILE: &str = "profile";
 const ABOUT: &str = "about";
 
-const user_port: MockUserGateway = MockUserGateway {};
+const mock_user_gateway: MockUserGateway = MockUserGateway {};
 // ------ ------
 //     Init
 // ------ ------
@@ -29,10 +31,7 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         .subscribe(Msg::UrlChanged)
         .stream(streams::window_event(Ev::Click, |_| Msg::HideMenu));
     Model {
-        ctx: Context {
-            user: None,
-            token: None,
-        },
+        user: None,
         base_url: url.to_base_url(),
         menu_visible: true,
         login_modal_visible: false,
@@ -59,8 +58,11 @@ pub enum Msg {
 
     // Login buttons
     LogIn,
+    LogInResult(AuthResult<user::User>),
     LogOut,
+    LogOutResult(AuthResult<()>),
     SignUp,
+    SignUpResult(AuthResult<user::User>),
 
     // Login modal visibility
     // @TODO: Could change this to HideLoginModal and then send this from auth_component
@@ -85,7 +87,7 @@ pub enum Msg {
 // ------ ------
 
 struct Model {
-    ctx: Context,
+    user: Option<AuthResult<user::User>>,
     base_url: Url,
     page: Page,
     menu_visible: bool,
@@ -126,12 +128,6 @@ struct Model {
     register_accepted_tou: bool,
 }
 
-struct Context {
-    user: Option<User>,
-    // @TODO: Do we need the token ? -> How is authentication done?
-    token: Option<String>,
-}
-
 struct RegisterContext {
     email: String,
     username: String,
@@ -143,18 +139,7 @@ struct RegisterContext {
 enum LoginModalState {
     Hidden,
     VisibleLogin,
-    VisibleRegister
-}
-
-// @TODO: Should we just use the User struct from the user domain ?
-// #SingleSourceOfTruth
-#[derive(Deserialize, Debug)]
-struct User {
-    username: String,
-    email: String,
-    summoner_name: Option<String>,
-    verified: bool,
-    reputation: i32,
+    VisibleRegister,
 }
 
 // ------------
@@ -212,9 +197,27 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         Msg::HideMenu => model.menu_visible = false,
 
         // Login buttons
-        Msg::LogIn => log!("logIn message"),
+        Msg::LogIn => {
+            log!("logOut message");
+            // TODO: (mock) use_cases asynchronous
+            let login_res = usecase::user::login_user(
+                &mock_user_gateway,
+                &user::Credentials {
+                    name_or_email: user::UNameOrEmail::Email("test".to_string()),
+                    password: "test".to_string(),
+                },
+            );
+            orders.send_msg(Msg::LogInResult(login_res));
+        }
         Msg::LogOut => log!("logOut message"),
         Msg::SignUp => log!("signUp message"),
+        Msg::LogInResult(auth_result) => model.user = Some(auth_result),
+        Msg::LogOutResult(Ok(_)) => model.user = None,
+        Msg::LogOutResult(Err(auth_err)) => {
+            orders.skip();
+            ()
+        }
+        Msg::SignUpResult(auth_result) => model.user = Some(auth_result),
 
         // Login modal visibility
         Msg::ToggleLoginModal => model.login_modal_visible = !model.login_modal_visible,
@@ -246,14 +249,14 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 // ------ ------
 
 fn view(model: &Model) -> Vec<Node<Msg>> {
+    let maybe_user: Option<&user::User> = match &model.user {
+        None => None,
+        Some(Err(_)) => None,
+        Some(Ok(user)) => Some(user),
+    };
     vec![div![
         C!["page-wrapper"], //enable sticky footer
-        view_navbar(
-            model.menu_visible,
-            &model.base_url,
-            model.ctx.user.as_ref(),
-            &model.page,
-        ),
+        view_navbar(model.menu_visible, &model.base_url, maybe_user, &model.page,),
         div![C!["content-wrapper"], view_content(&model.page)], //enable sticky footer
         view_footer(),
         // MODALS:
@@ -282,7 +285,12 @@ fn view_content(page: &Page) -> Node<Msg> {
 }
 
 // ----- view_navbar ------
-fn view_navbar(menu_visible: bool, base_url: &Url, user: Option<&User>, page: &Page) -> Node<Msg> {
+fn view_navbar(
+    menu_visible: bool,
+    base_url: &Url,
+    user: Option<&user::User>,
+    page: &Page,
+) -> Node<Msg> {
     nav![
         C!["navbar", "is-dark"],
         attrs! {
@@ -325,7 +333,7 @@ fn view_brand_and_hamburger(menu_visible: bool, base_url: &Url) -> Node<Msg> {
 fn view_navbar_menu(
     menu_visible: bool,
     base_url: &Url,
-    user: Option<&User>,
+    user: Option<&user::User>,
     page: &Page,
 ) -> Node<Msg> {
     div![
@@ -368,7 +376,7 @@ fn view_navbar_menu_start(base_url: &Url, page: &Page) -> Node<Msg> {
     ]
 }
 
-fn view_navbar_menu_end(base_url: &Url, user: Option<&User>) -> Node<Msg> {
+fn view_navbar_menu_end(base_url: &Url, user: Option<&user::User>) -> Node<Msg> {
     div![
         C!["navbar-end"],
         div![
@@ -385,7 +393,7 @@ fn view_navbar_menu_end(base_url: &Url, user: Option<&User>) -> Node<Msg> {
     ]
 }
 
-fn view_buttons_for_logged_in_user(base_url: &Url, user: &User) -> Vec<Node<Msg>> {
+fn view_buttons_for_logged_in_user(base_url: &Url, user: &user::User) -> Vec<Node<Msg>> {
     vec![
         a![
             C!["button", "is-primary"],
