@@ -6,24 +6,3 @@ pub fn check_valid_email(email: &str) -> bool {
     .unwrap();
     email_regex.is_match(email)
 }
-
-pub fn check_valid_password(pw: &str) -> Result<(), InvalidPasswordErr> {
-    if pw.len() < 8 {
-        return Err(InvalidPasswordErr::TooShort);
-    } else {
-        if pw.len() > 32 {
-            return Err(InvalidPasswordErr::TooLong);
-        } else {
-            return Ok(());
-        }
-    }
-}
-
-pub enum InvalidPasswordErr {
-    MissingDigit,
-    MissingLowercase,
-    MissingUppercase,
-    MissingSpecialChar,
-    TooLong,
-    TooShort,
-}

@@ -32,6 +32,8 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         register_email_value: String::from(""),
         register_username_value: String::from(""),
         register_password_value: String::from(""),
+        register_password_comp_value: String::from(""),
+        register_accepted_tou: false,
         page: Page::Home,
     }
 }
@@ -49,6 +51,8 @@ pub enum Msg {
     ChangeRegisterEmailValue(String),
     ChangeRegisterUsernameValue(String),
     ChangeRegisterPasswordValue(String),
+    ChangeRegisterPasswordCompValue(String),
+    ToggleRegisterAcceptedTou,
     HideMenu,
     LogIn,
     LogOut,
@@ -70,6 +74,8 @@ struct Model {
     register_email_value: String,
     register_username_value: String,
     register_password_value: String,
+    register_password_comp_value: String,
+    register_accepted_tou: bool,
 }
 
 struct Context {
@@ -142,6 +148,12 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         Msg::ChangeRegisterEmailValue(email_address) => model.register_email_value = email_address,
         Msg::ChangeRegisterUsernameValue(username) => model.register_username_value = username,
         Msg::ChangeRegisterPasswordValue(password) => model.register_password_value = password,
+        Msg::ChangeRegisterPasswordCompValue(password) => {
+            model.register_password_comp_value = password
+        }
+        Msg::ToggleRegisterAcceptedTou => {
+            model.register_accepted_tou = !model.register_accepted_tou
+        }
         Msg::LoginTabActive => model.login_modal_register_tab_active = false,
         Msg::HideMenu => model.menu_visible = false,
         Msg::LogIn => log!("logIn message"),
@@ -178,6 +190,8 @@ fn view(model: &Model) -> Vec<Node<Msg>> {
             &model.register_username_value,
             &model.register_email_value,
             &model.register_password_value,
+            &model.register_password_comp_value,
+            model.register_accepted_tou,
         )
     ]]
 }

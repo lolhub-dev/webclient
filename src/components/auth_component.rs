@@ -8,34 +8,42 @@ pub fn view(
     username: &str,
     email_address: &str,
     password: &str,
+    password_comp: &str,
+    tou_accepted: bool,
 ) -> Node<Msg> {
     let login_modal_content = div![
         C!["modal-card"],
         div![
-            C!["modal-card-body", "modal-fixed", "box"],
+            C!["modal-card-body", "box"],
             div![
-                C!["tabs", "is-boxed"],
-                ul![
-                    li![
-                        C![IF![!register_tab_active =>"is_active"]],
-                        a!["Login"],
-                        ev(Ev::Click, |event| {
-                            event.stop_propagation();
-                            Msg::RegisterTabActive
-                        })
+                C!["modal-fixed-height"],
+                div![
+                    C!["container"],
+                    div![
+                        C!["tabs"],
+                        ul![
+                            li![
+                                IF![!register_tab_active => C!["is_active"]],
+                                a!["Login"],
+                                ev(Ev::Click, |event| {
+                                    event.stop_propagation();
+                                    Msg::RegisterTabActive
+                                })
+                            ],
+                            li![
+                                IF![register_tab_active => C!["is_active"]],
+                                a!["Register"],
+                                ev(Ev::Click, |event| {
+                                    event.stop_propagation();
+                                    Msg::LoginTabActive
+                                })
+                            ]
+                        ]
                     ],
-                    li![
-                        C![IF![register_tab_active =>"is_active"]],
-                        a!["Register"],
-                        ev(Ev::Click, |event| {
-                            event.stop_propagation();
-                            Msg::LoginTabActive
-                        })
-                    ]
+                    IF![register_tab_active =>view_login()],
+                    IF![!register_tab_active =>view_register(username, email_address, password, password_comp, tou_accepted)]
                 ]
-            ],
-            IF![register_tab_active =>view_login()],
-            IF![!register_tab_active =>view_register(username, email_address, password)]
+            ]
         ]
     ];
     let login_modal_toggle_handler = ev(Ev::Click, |event| {
@@ -55,40 +63,72 @@ pub fn view(
 }
 
 fn view_login<Msg>() -> Node<Msg> {
-    form![
+    div![
         div![
-            C!["field"],
-            p![
-                C!["control", "has-icons-left", "has-icons-right"],
-                input![
-                    C!["input"],
-                    attrs![At::from("placeholder")=>"Email", At::from("type")=>"email"]
-                ],
-                span![
-                    C!["icon", "is-small", "is-left"],
-                    i![C!["fas", "fa-envelope"]]
-                ],
-                span![C!["icon", "is-small", "is-left"], i![C!["fas", "fa-check"]]]
-            ]
+            C!["image", "is-19by9", "is-paragraph"],
+            img![attrs!(At::from("src")=>{"https://bulma.io/images/placeholders/640x320.png"})],
         ],
-        div![
-            C!["field"],
-            p![
-                C!["control", "has-icons-left", "has-icons-right"],
-                input![
-                    C!["input"],
-                    attrs![At::from("placeholder")=>"Password", At::from("type")=>"password"]
+        form![
+            div![
+                C!["field"],
+                p![
+                    C!["control", "has-icons-left", "has-icons-right"],
+                    input![
+                        C!["input",],
+                        attrs![At::from("placeholder")=>"Username/Email", At::from("type")=>"email"]
+                    ],
+                    span![
+                        C!["icon", "is-small", "is-left"],
+                        i![C!["fas", "fa-envelope"]]
+                    ],
+                    span![C!["icon", "is-small", "is-left"], i![C!["fas", "fa-check"]]]
+                ]
+            ],
+            div![
+                C!["field"],
+                p![
+                    C!["control", "has-icons-left", "has-icons-right"],
+                    input![
+                        C!["input",],
+                        attrs![At::from("placeholder")=>"Password", At::from("type")=>"password"]
+                    ],
+                    span![C!["icon", "is-small", "is-left"], i![C!["fas", "fa-lock"]]],
+                ]
+            ],
+            nav![
+                C!["level"],
+                div![
+                    C!["level-left"],
+                    div![
+                        C!["level-item"],
+                        div![
+                            C!["field"],
+                            p![
+                                C!["control"],
+                                button![C!["button ", "is-success", "is-fullwidth"], "Login"]
+                            ],
+                        ]
+                    ]
                 ],
-                span![C!["icon", "is-small", "is-left"], i![C!["fas", "fa-lock"]]],
+                div![
+                    C!["level-right"],
+                    div![C!["level-item"], a!["Forgot Username/Password?"]]
+                ]
             ]
         ]
     ]
 }
 
-fn view_register(username: &str, email_address: &str, password: &str) -> Node<Msg> {
+fn view_register(
+    username: &str,
+    email_address: &str,
+    password: &str,
+    password_comp: &str,
+    tou_accepted: bool,
+) -> Node<Msg> {
+    let passwords_matching = password == password_comp;
     let is_valid_username: Result<(), ()> = Ok(()); // TODO: actually check the username availability in the backend!
     let is_valid_email_address = utils::check_valid_email(email_address);
-    let is_valid_password = utils::check_valid_password(password);
     // TODO: also check whether the email and username are already taken !!!
     form![
         div![
@@ -137,13 +177,7 @@ fn view_register(username: &str, email_address: &str, password: &str) -> Node<Ms
             p![
                 C!["control", "has-icons-left", "has-icons-right"],
                 input![
-                    C![
-                        "input",
-                        IF![password!="" => match is_valid_password {
-                            Ok(_) => "is-success",
-                            Err(_) => "is-danger",
-                        }]
-                    ],
+                    C!["input",],
                     attrs![At::from("placeholder")=>"Password", At::from("type")=>"password"],
                     input_ev(Ev::Input, |event| {
                         Msg::ChangeRegisterPasswordValue(event)
@@ -153,19 +187,63 @@ fn view_register(username: &str, email_address: &str, password: &str) -> Node<Ms
             ],
             IF![password!=""=>p![
                 C!["help", "is-danger"],
-                match is_valid_password {
-                    Ok(_) => "", //this shouldnt happen, since this is only the help for 'is-danger'
-                    Err(utils::InvalidPasswordErr::TooShort) => "Minimum length is 8 characters.",
-                    Err(utils::InvalidPasswordErr::TooLong) => "Maximal lenght is 32 characters.",
-                    Err(utils::InvalidPasswordErr::MissingDigit) => "At least one digit!",
-                    Err(utils::InvalidPasswordErr::MissingLowercase) =>
-                        "At least one lowercase character!",
-                    Err(utils::InvalidPasswordErr::MissingUppercase) =>
-                        "At least one uppercase character!",
-                    Err(utils::InvalidPasswordErr::MissingSpecialChar) =>
-                        "At least one special character!",
-                }
             ]]
+        ],
+        div![
+            C!["field"],
+            p![
+                C!["control", "has-icons-left", "has-icons-right"],
+                input![
+                    C!["input", IF![!passwords_matching =>"is-error"],],
+                    input_ev(Ev::Input, |event| {
+                        Msg::ChangeRegisterPasswordCompValue(event)
+                    }),
+                    attrs![At::from("placeholder")=>"Repeat Password", At::from("type")=>"password"],
+                    input_ev(Ev::Input, |event| {
+                        Msg::ChangeRegisterPasswordValue(event)
+                    })
+                ],
+                span![C!["icon", "is-small", "is-left"], i![C!["fas", "fa-lock"]]],
+            ],
+            IF![password!=""=>p![
+                C!["help", "is-danger"],
+            ]]
+        ],
+        div![
+            label![
+                C!["checkbox"],
+                input![attrs![At::from("type") => "checkbox"],],
+                " I agree to the ",
+                a!["terms and conditions"],
+            ],
+            ev(Ev::Click, |event| {
+                event.stop_propagation();
+                Msg::ToggleRegisterAcceptedTou
+            })
+        ],
+        nav![
+            C!["level"],
+            div![
+                C!["level-left"],
+                div![
+                    C!["level-item"],
+                    div![
+                        C!["field"],
+                        p![
+                            C!["control"],
+                            button![
+                                C!["button ", "is-success", "is-fullwidth",],
+                                IF![!tou_accepted=>attrs!(At::from("disabled")=>"")],
+                                "Register"
+                            ]
+                        ],
+                    ]
+                ]
+            ],
+            div![
+                C!["level-right"],
+                div![C!["level-item"], a!["Got questions?"]]
+            ]
         ]
     ]
 }
