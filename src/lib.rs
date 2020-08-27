@@ -1,11 +1,12 @@
 #![allow(clippy::wildcard_imports)]
 
+use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use seed::{prelude::*, *};
 use serde::Deserialize;
 
 // Re-export components module so we can use it in page module
 pub mod components;
-pub mod domain; 
+pub mod domain;
 pub mod driver;
 pub mod gateway;
 pub mod port;
@@ -18,6 +19,7 @@ use crate::components::auth_component;
 const PROFILE: &str = "profile";
 const ABOUT: &str = "about";
 
+const user_port: MockUserGateway = MockUserGateway {};
 // ------ ------
 //     Init
 // ------ ------

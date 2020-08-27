@@ -1,5 +1,5 @@
-use crate::domain::user::{AuthResult, Credentials, UNameOrEmail, User, UserId};
-use crate::port::user_port::{UserPort, AuthError};
+use crate::domain::user::{Credentials, UNameOrEmail, User, UserId};
+use crate::port::user_port::{AuthError, AuthResult, UserPort};
 
 use std::error::Error;
 use std::fs::File;
@@ -16,23 +16,23 @@ fn get_users() -> Vec<User> {
     let reader = BufReader::new(file);
 
     let users: Vec<User> = serde_json::from_reader(reader)?;
+    users
 }
 
 impl UserPort for MockUserGateway {
-
     fn login(self, credentials: Credentials) -> AuthResult<User> {
         let users = get_users();
-        let ret_user = users.iter()
-            .filter(|user: User| {
-            match credentials.name_or_email {
-               UNameOrEmail::Username(uname) => user.username == uname,
-               UNameOrEmail::Email(email) => user.email == email
-            }
-        }).next();
+        let ret_user = users
+            .iter()
+            .filter(|user: User| match credentials.name_or_email {
+                UNameOrEmail::Username(uname) => user.username == uname,
+                UNameOrEmail::Email(email) => user.email == email,
+            })
+            .next();
 
         match ret_user {
-            Some(user) => Ok(user)m
-            None => Err(AuthError::InvalidCredentials)
+            Some(user) => Ok(user),
+            None => Err(AuthError::InvalidCredentials),
         }
     }
 
@@ -40,7 +40,14 @@ impl UserPort for MockUserGateway {
         Ok(())
     }
 
-    fn register(self, username: String, name: String, surname: String, email: String, password: String) -> AuthResult<user::User> {
+    fn register(
+        self,
+        username: String,
+        name: String,
+        surname: String,
+        email: String,
+        password: String,
+    ) -> AuthResult<user::User> {
         Ok(User {
             userid: UserId::new(),
             username,
