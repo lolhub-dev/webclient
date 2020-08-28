@@ -2,7 +2,7 @@
 
 use crate::domain::user;
 use crate::gateway::mock::mock_user_gateway::MockUserGateway;
-use crate::port::user_port::AuthResult;
+use crate::port::user_port::{AuthError, AuthResult};
 use seed::{prelude::*, *};
 use serde::Deserialize;
 
@@ -198,16 +198,17 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 
         // Login buttons
         Msg::LogIn => {
-            log!("logOut message");
+            log!("logIn message");
+            // let login_res = Err(AuthError::InvalidCredentials);
             // TODO: (mock) use_cases asynchronous
-            let login_res = usecase::user::login_user(
-                &mock_user_gateway,
-                &user::Credentials {
-                    name_or_email: user::UNameOrEmail::Email("test".to_string()),
-                    password: "test".to_string(),
-                },
-            );
-            orders.send_msg(Msg::LogInResult(login_res));
+            // let login_res = usecase::user::login_user(
+            // &mock_user_gateway,
+            // &user::Credentials {
+            // name_or_email: user::UNameOrEmail::Email("test".to_string()),
+            // password: "test".to_string(),
+            // },
+            // );
+            // orders.send_msg(Msg::LogInResult(login_res));
         }
         Msg::LogOut => log!("logOut message"),
         Msg::SignUp => log!("signUp message"),

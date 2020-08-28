@@ -1,21 +1,15 @@
 use crate::domain::user::{Credentials, UNameOrEmail, User, UserId};
 use crate::port::user_port::{AuthError, AuthResult, UserPort};
-
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
+use seed::{fetch::fetch, prelude::FetchError};
 
 pub struct MockUserGateway;
 
-const MOCK_DATA_PATH: &str = "../../../test/mock_user.json";
+const MOCK_DATA_PATH: &str = "assets/mock/mock_user.json";
 
-fn get_users() -> Vec<User> {
-    let filepath = Path::new(MOCK_DATA_PATH);
-    let file = File::open(filepath).expect("Could not find mock data.");
-    let reader = BufReader::new(file);
-
-    let users: Vec<User> = serde_json::from_reader(reader).expect("Could not parse mock data.");
-    users
+async fn get_users() -> Result<Vec<User>, FetchError> {
+    let file = &fetch(MOCK_DATA_PATH).await?.text().await?;
+    let users = serde_json::from_str(file);
+    users.unwrap()
 }
 
 impl UserPort for MockUserGateway {
