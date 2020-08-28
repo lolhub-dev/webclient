@@ -1,7 +1,7 @@
 use crate::domain::user::{Credentials, UNameOrEmail, User, UserId};
 use crate::port::user_port::{AuthError, AuthResult, UserPort};
 use futures::executor;
-use seed::{fetch::fetch, prelude::FetchError};
+use seed::{fetch::fetch, log, prelude::FetchError};
 use serde_json::error::Error as SerdeError;
 
 pub struct MockUserGateway;
@@ -15,7 +15,9 @@ async fn get_users() -> Result<Vec<User>, FetchError> {
 }
 
 impl UserPort for MockUserGateway {
+    //TODO: as soon as async is supported in traits use it !!!
     fn login(&self, credentials: &Credentials) -> AuthResult<User> {
+        //TODO: safe handling of future and the Result type and its possible errors
         let users = executor::block_on(get_users()).unwrap();
         let ret_user = users
             .into_iter()
@@ -47,6 +49,7 @@ impl UserPort for MockUserGateway {
     }
 
     fn username_taken(&self, username: String) -> AuthResult<bool> {
+        //TODO: safe handling of future and the Result type and its possible errors
         let users = executor::block_on(get_users()).unwrap();
         Ok(users.into_iter().any(|user| user.username == username))
     }

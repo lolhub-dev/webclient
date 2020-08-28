@@ -1,5 +1,6 @@
 #![allow(clippy::wildcard_imports)]
 
+use crate::components::auth_component;
 use crate::domain::user;
 use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use crate::port::user_port::{AuthError, AuthResult};
@@ -16,7 +17,6 @@ pub mod usecase;
 
 mod page;
 mod utils;
-use crate::components::auth_component;
 
 const PROFILE: &str = "profile";
 const ABOUT: &str = "about";
