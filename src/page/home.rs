@@ -1,13 +1,9 @@
-use crate::components::hero_component;
-use crate::Msg;
+use crate::component::hero_component;
+use crate::{generated::css_classes::C, image_src, Model, Msg};
 use seed::{prelude::*, *};
 
-// ----------------
-//     view
-// ----------------
-
-pub fn view() -> Vec<Node<Msg>> {
-    vec![hero_component::view(), view_search()]
+pub fn view(model: &Model) -> Node<Msg> {
+    div![hero_component::view(), view_search()]
 }
 
 fn view_search() -> Node<Msg> {

@@ -1,13 +1,9 @@
+use crate::{asset_path, generated::css_classes::C, image_src, Msg};
 use seed::{prelude::*, *};
 
-pub fn view<Ms>() -> Vec<Node<Ms>> {
-    vec![div![C!["container", "contentainer"], view_content(),]]
-}
-
-fn view_content<Ms>() -> Vec<Node<Ms>> {
-    vec![
-        p![
-            C!["title", "is-3"],
+pub fn view() -> Node<Msg> {
+    div![C![C.container, C.contentainer],p![
+            C![C.title, C.is_3],
             "What is lol:Hub?",
         ],
         p![
@@ -29,7 +25,5 @@ fn view_content<Ms>() -> Vec<Node<Ms>> {
         p![
             C!["is-size-5", "is-paragraph"],
             "You can report any bugs you encounter by opening an issue on our Github page."
-        ]
-    ]
+        ]]
 }
-

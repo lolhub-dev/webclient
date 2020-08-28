@@ -1,27 +1,42 @@
-#![allow(clippy::wildcard_imports)]
+// @TODO: uncomment once https://github.com/rust-lang/rust/issues/54726 stable
+//#![rustfmt::skip::macros(class)]
 
-use crate::components::auth_component;
-use crate::domain::user;
-use crate::gateway::mock::mock_user_gateway::MockUserGateway;
-use crate::port::user_port::{AuthError, AuthResult};
-use seed::{prelude::*, *};
-use serde::Deserialize;
+#![allow(
+    clippy::used_underscore_binding,
+    clippy::non_ascii_literal,
+    clippy::enum_glob_use,
+    clippy::must_use_candidate,
+    clippy::wildcard_imports
+)]
 
-// Re-export components module so we can use it in page module
-pub mod components;
+pub mod component;
 pub mod domain;
 pub mod driver;
 pub mod gateway;
 pub mod port;
 pub mod usecase;
 
+mod generated;
 mod page;
 mod utils;
 
-const PROFILE: &str = "profile";
+use crate::domain::user;
+use crate::gateway::mock::mock_user_gateway::MockUserGateway;
+use crate::port::user_port::{AuthError, AuthResult};
+use generated::css_classes::C;
+use seed::{prelude::*, *};
+use std::fmt;
+use MenuVisibility::*;
+
+const TITLE_SUFFIX: &str = "Title Suffix? What is that?";
+// https://mailtolink.me/
+const USER_AGENT_FOR_PRERENDERING: &str = "ReactSnap";
+const STATIC_PATH: &str = "static";
+const MOCK_PATH: &str = "static/mocks";
+const IMAGES_PATH: &str = "static/images";
+
 const ABOUT: &str = "about";
 
-const mock_user_gateway: MockUserGateway = MockUserGateway {};
 // ------ ------
 //     Init
 // ------ ------
@@ -29,68 +44,67 @@ const mock_user_gateway: MockUserGateway = MockUserGateway {};
 fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
     orders
         .subscribe(Msg::UrlChanged)
+        // .stream(streams::window_event(Ev::Scroll, |_| Msg::Scrolled))
         .stream(streams::window_event(Ev::Click, |_| Msg::HideMenu));
+
     Model {
-        user: None,
         base_url: url.to_base_url(),
-        menu_visible: true,
-        login_modal_visible: false,
-        login_modal_register_tab_active: false,
+        page: Page::init(url),
+        menu_visibility: Hidden,
+        in_prerendering: is_in_prerendering(),
+        session: None,
+
+        auth_modal_visible: false,
+        auth_modal_register_tab_active: false,
         register_email_value: String::from(""),
         register_username_value: String::from(""),
         register_password_value: String::from(""),
         register_password_comp_value: String::from(""),
         register_accepted_tou: false,
-        page: Page::Home,
     }
 }
 
-// ------ ------
-//   Messages
-// ------ ------
+fn is_in_prerendering() -> bool {
+    let user_agent =
+        window().navigator().user_agent().expect("cannot get user agent");
 
-pub enum Msg {
-    UrlChanged(subs::UrlChanged),
-
-    // Navbar
-    ToggleMenu,
-    HideMenu,
-
-    // Login buttons
-    LogIn,
-    LogInResult(AuthResult<user::User>),
-    LogOut,
-    LogOutResult(AuthResult<()>),
-    SignUp,
-    SignUpResult(AuthResult<user::User>),
-
-    // Login modal visibility
-    // @TODO: Could change this to HideLoginModal and then send this from auth_component
-    ToggleLoginModal,
-    // @TODO Send these messages from the respective button in the navbar
-    RegisterTabActive,
-    LoginTabActive,
-
-    // Login/Register form
-    ChangeRegisterEmailValue(String),
-    ChangeRegisterUsernameValue(String),
-    ChangeRegisterPasswordValue(String),
-    ChangeRegisterPasswordCompValue(String),
-    ToggleRegisterAcceptedTou,
-
-    // Routing messages
-    ProfileMsg(page::profile::Msg),
+    user_agent == USER_AGENT_FOR_PRERENDERING
 }
 
 // ------ ------
 //     Model
 // ------ ------
 
-struct Model {
-    user: Option<AuthResult<user::User>>,
-    base_url: Url,
-    page: Page,
-    menu_visible: bool,
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub enum MenuVisibility {
+    Visible,
+    Hidden,
+}
+
+impl MenuVisibility {
+    pub fn toggle(&mut self) {
+        *self = match self {
+            Visible => Hidden,
+            Hidden => Visible,
+        }
+    }
+}
+
+//This is needed for the use of MenuVisibility in IF! macros...dont ask me why
+//deriving Display doesnt work either...maybe theres a better solution
+impl fmt::Display for MenuVisibility {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", "test")
+    }
+}
+
+pub struct Model {
+    pub base_url: Url,
+    pub page: Page,
+    pub menu_visibility: MenuVisibility,
+    pub in_prerendering: bool,
+    pub session: Session,
+
     // @TODO: Refactor (?) Should probably encapsulate all the register and login related
     // stuff in a separate struct.  Something like
     //
@@ -119,8 +133,8 @@ struct Model {
     // }
     //
     // to reduce the number of booleans in our model
-    login_modal_visible: bool,
-    login_modal_register_tab_active: bool,
+    auth_modal_visible: bool,
+    auth_modal_register_tab_active: bool,
     register_email_value: String,
     register_username_value: String,
     register_password_value: String,
@@ -128,58 +142,40 @@ struct Model {
     register_accepted_tou: bool,
 }
 
-struct RegisterContext {
-    email: String,
-    username: String,
-    password: String,
-    password_comp: String,
-    accepted_tou: bool,
-}
+pub type Session = Option<AuthResult<user::User>>;
 
-enum LoginModalState {
-    Hidden,
-    VisibleLogin,
-    VisibleRegister,
-}
+// ------ Page ------
 
-// ------------
-//    Pages
-// ------------
-
-// @TODO: Add the rest of the pages
-enum Page {
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum Page {
     Home,
-    Profile(page::profile::Model),
     About,
     NotFound,
 }
 
 impl Page {
-    fn init(mut url: Url, orders: &mut impl Orders<Msg>) -> Self {
-        match url.remaining_path_parts().as_slice() {
-            [] => Self::Home,
-            [PROFILE] => {
-                Self::Profile(page::profile::init(url, &mut orders.proxy(Msg::ProfileMsg)))
-            }
-            [ABOUT] => Self::About,
-            _ => Self::NotFound,
-        }
+    pub fn init(mut url: Url) -> Self {
+        let (page, title) = match url.remaining_path_parts().as_slice() {
+            [] => (Self::Home, TITLE_SUFFIX.to_owned()),
+            [ABOUT] => (Self::About, format!("About - {}", TITLE_SUFFIX)),
+            _ => (Self::NotFound, format!("404 - {}", TITLE_SUFFIX)),
+        };
+        document().set_title(&title);
+        page
     }
 }
 
-// ----------
-//    Urls
-// ----------
+// ------ ------
+//     Urls
+// ------ ------
 
 struct_urls!();
 impl<'a> Urls<'a> {
-    fn home(self) -> Url {
+    pub fn home(self) -> Url {
         self.base_url()
     }
-    fn profile(self) -> Url {
-        self.base_url().add_path_part(PROFILE)
-    }
-    fn about(self) -> Url {
+
+    pub fn about(self) -> Url {
         self.base_url().add_path_part(ABOUT)
     }
 }
@@ -188,14 +184,47 @@ impl<'a> Urls<'a> {
 //    Update
 // ------ ------
 
-fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
+pub enum Msg {
+    UrlChanged(subs::UrlChanged),
+    ScrollToTop,
+    ToggleMenu,
+    HideMenu,
+
+    // Login buttons
+    LogIn,
+    LogInResult(AuthResult<user::User>),
+    LogOut,
+    LogOutResult(AuthResult<()>),
+    SignUp,
+    SignUpResult(AuthResult<user::User>),
+
+    // Login modal visibility
+    // @TODO: Could change this to HideLoginModal and then send this from auth_component
+    ToggleLoginModal,
+    // @TODO Send these messages from the respective button in the navbar
+    RegisterTabActive,
+    LoginTabActive,
+
+    // Login/Register form
+    ChangeRegisterEmailValue(String),
+    ChangeRegisterUsernameValue(String),
+    ChangeRegisterPasswordValue(String),
+    ChangeRegisterPasswordCompValue(String),
+    ToggleRegisterAcceptedTou,
+}
+
+pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
-        Msg::UrlChanged(subs::UrlChanged(url)) => model.page = Page::init(url, orders),
-
-        // Navbar visibility
-        Msg::ToggleMenu => model.menu_visible = !model.menu_visible,
-        Msg::HideMenu => model.menu_visible = false,
-
+        Msg::UrlChanged(subs::UrlChanged(url)) => {
+            model.page = Page::init(url);
+        }
+        Msg::ScrollToTop => window().scroll_to_with_scroll_to_options(
+            web_sys::ScrollToOptions::new().top(0.),
+        ),
+        Msg::ToggleMenu => model.menu_visibility.toggle(),
+        Msg::HideMenu => {
+            model.menu_visibility = Hidden;
+        }
         // Login buttons
         Msg::LogIn => {
             log!("logIn message");
@@ -212,35 +241,36 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         }
         Msg::LogOut => log!("logOut message"),
         Msg::SignUp => log!("signUp message"),
-        Msg::LogInResult(auth_result) => model.user = Some(auth_result),
-        Msg::LogOutResult(Ok(_)) => model.user = None,
+        Msg::LogInResult(auth_result) => model.session = Some(auth_result),
+        Msg::LogOutResult(Ok(_)) => model.session = None,
         Msg::LogOutResult(Err(auth_err)) => {
             orders.skip();
             ()
         }
-        Msg::SignUpResult(auth_result) => model.user = Some(auth_result),
+        Msg::SignUpResult(auth_result) => model.session = Some(auth_result),
 
         // Login modal visibility
-        Msg::ToggleLoginModal => model.login_modal_visible = !model.login_modal_visible,
-        Msg::RegisterTabActive => model.login_modal_register_tab_active = true,
-        Msg::LoginTabActive => model.login_modal_register_tab_active = false,
+        Msg::ToggleLoginModal => {
+            model.auth_modal_visible = !model.auth_modal_visible
+        }
+        Msg::RegisterTabActive => model.auth_modal_register_tab_active = true,
+        Msg::LoginTabActive => model.auth_modal_register_tab_active = false,
 
         // Login/Register form
-        Msg::ChangeRegisterEmailValue(email_address) => model.register_email_value = email_address,
-        Msg::ChangeRegisterUsernameValue(username) => model.register_username_value = username,
-        Msg::ChangeRegisterPasswordValue(password) => model.register_password_value = password,
+        Msg::ChangeRegisterEmailValue(email_address) => {
+            model.register_email_value = email_address
+        }
+        Msg::ChangeRegisterUsernameValue(username) => {
+            model.register_username_value = username
+        }
+        Msg::ChangeRegisterPasswordValue(password) => {
+            model.register_password_value = password
+        }
         Msg::ChangeRegisterPasswordCompValue(password) => {
             model.register_password_comp_value = password
         }
         Msg::ToggleRegisterAcceptedTou => {
             model.register_accepted_tou = !model.register_accepted_tou
-        }
-
-        // Routing related
-        Msg::ProfileMsg(msg) => {
-            if let Page::Profile(model) = &mut model.page {
-                page::profile::update(msg, model, &mut orders.proxy(Msg::ProfileMsg))
-            }
         }
     }
 }
@@ -249,195 +279,61 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 //     View
 // ------ ------
 
-fn view(model: &Model) -> Vec<Node<Msg>> {
-    let maybe_user: Option<&user::User> = match &model.user {
-        None => None,
-        Some(Err(_)) => None,
-        Some(Ok(user)) => Some(user),
-    };
-    vec![div![
-        C!["page-wrapper"], //enable sticky footer
-        view_navbar(model.menu_visible, &model.base_url, maybe_user, &model.page,),
-        div![C!["content-wrapper"], view_content(&model.page)], //enable sticky footer
-        view_footer(),
-        // MODALS:
-        // @TODO: Refactor would greatly reduce the verbosity here
-        auth_component::view(
-            model.login_modal_visible,
-            model.login_modal_register_tab_active,
-            &model.register_username_value,
-            &model.register_email_value,
-            &model.register_password_value,
-            &model.register_password_comp_value,
-            model.register_accepted_tou,
-        )
-    ]]
+// Notes:
+// - \u{00A0} is the non-breaking space
+//   - https://codepoints.net/U+00A0
+//
+// - "▶\u{fe0e}" - \u{fe0e} is the variation selector, it prevents ▶ to change to emoji in some browsers
+//   - https://codepoints.net/U+FE0E
+
+pub fn view(model: &Model) -> impl IntoNodes<Msg> {
+    div![
+        C![
+            IF!(not(model.in_prerendering) => C.fade_in),
+            C.min_h_screen,
+            C.flex,
+            C.flex_col,
+        ],
+        vec![div![
+            C!["page-wrapper"], //enable sticky footer
+            page::partial::header::view(model),
+            div![C!["content-wrapper"], view_content(model)], //enable sticky footer
+            page::partial::footer::view(),
+            // MODALS:
+            component::auth_component::view(model)
+        ]]
+    ]
 }
 
-// ----- view_content ------
-
-fn view_content(page: &Page) -> Node<Msg> {
-    div![match page {
-        Page::Home => page::home::view(),
-        Page::Profile(model) => page::profile::view(model).map_msg(Msg::ProfileMsg),
-        Page::NotFound => page::not_found::view(),
+fn view_content(model: &Model) -> Node<Msg> {
+    div![match model.page {
+        Page::Home => page::home::view(&model),
         Page::About => page::about::view(),
+        Page::NotFound => page::not_found::view(),
     }]
 }
 
-// ----- view_navbar ------
-fn view_navbar(
-    menu_visible: bool,
-    base_url: &Url,
-    user: Option<&user::User>,
-    page: &Page,
-) -> Node<Msg> {
-    nav![
-        C!["navbar", "is-dark"],
-        attrs! {
-            At::from("role") => "navigation",
-            At::AriaLabel => "main navigation",
-        },
-        view_brand_and_hamburger(menu_visible, base_url),
-        view_navbar_menu(menu_visible, base_url, user, page),
-    ]
+pub fn image_src(image: &str) -> String {
+    format!("{}/{}", IMAGES_PATH, image)
 }
 
-fn view_brand_and_hamburger(menu_visible: bool, base_url: &Url) -> Node<Msg> {
-    div![
-        C!["navbar-brand"],
-        // ------ Logo ------
-        a![
-            C!["navbar-item", "has-text-weight-bold", "is-size-3"],
-            attrs! {At::Href => Urls::new(base_url).home()},
-            "lol:Hub"
-        ],
-        // ------ Hamburger ------
-        a![
-            C!["navbar-burger", "burger", IF!(menu_visible => "is-active")],
-            attrs! {
-                At::from("role") => "button",
-                At::AriaLabel => "menu",
-                At::AriaExpanded => menu_visible,
-            },
-            ev(Ev::Click, |event| {
-                event.stop_propagation();
-                Msg::ToggleMenu
-            }),
-            span![attrs! {At::AriaHidden => "true"}],
-            span![attrs! {At::AriaHidden => "true"}],
-            span![attrs! {At::AriaHidden => "true"}],
-        ]
-    ]
+pub fn asset_path(asset: &str) -> String {
+    format!("{}/{}", STATIC_PATH, asset)
 }
 
-fn view_navbar_menu(
-    menu_visible: bool,
-    base_url: &Url,
-    user: Option<&user::User>,
-    page: &Page,
-) -> Node<Msg> {
-    div![
-        C!["navbar-menu", IF!(menu_visible => "is-active")],
-        view_navbar_menu_start(base_url, page),
-        view_navbar_menu_end(base_url, user),
-    ]
-}
-
-fn view_navbar_menu_start(base_url: &Url, page: &Page) -> Node<Msg> {
-    div![
-        C!["navbar-start"],
-        a![
-            C![
-                "navbar-item",
-                "is-tab",
-                IF!(matches!(page, Page::Home) => "is-active"),
-            ],
-            attrs! {At::Href => Urls::new(base_url).home()},
-            "Home",
-        ],
-        a![
-            C![
-                "navbar-item",
-                "is-tab",
-                IF!(matches!(page, Page::Profile(_)) => "is-active"),
-            ],
-            attrs! {At::Href => Urls::new(base_url).profile()},
-            "Profile",
-        ],
-        a![
-            C![
-                "navbar-item",
-                "is-tab",
-                IF!(matches!(page, Page::About) => "is-active"),
-            ],
-            attrs! {At::Href => Urls::new(base_url).about()},
-            "About",
-        ],
-    ]
-}
-
-fn view_navbar_menu_end(base_url: &Url, user: Option<&user::User>) -> Node<Msg> {
-    div![
-        C!["navbar-end"],
-        div![
-            C!["navbar-item"],
-            div![
-                C!["buttons"],
-                if let Some(user) = user {
-                    view_buttons_for_logged_in_user(base_url, user)
-                } else {
-                    view_buttons_for_anonymous_user()
-                }
-            ]
-        ]
-    ]
-}
-
-fn view_buttons_for_logged_in_user(base_url: &Url, user: &user::User) -> Vec<Node<Msg>> {
-    vec![
-        a![
-            C!["button", "is-primary"],
-            attrs![
-                At::Href => Urls::new(base_url).profile(),
-            ],
-            strong![&user.username],
-        ],
-        a![
-            C!["button", "is-light"],
-            "Log out",
-            ev(Ev::Click, |_| Msg::LogOut),
-        ],
-    ]
-}
-
-fn view_buttons_for_anonymous_user() -> Vec<Node<Msg>> {
-    vec![
-        a![
-            C!["button", "is-primary"],
-            strong!["Sign up"],
-            ev(Ev::Click, |_| Msg::ToggleLoginModal),
-        ],
-        a![
-            C!["button", "is-light"],
-            "Log in",
-            ev(Ev::Click, |_| Msg::ToggleLoginModal),
-        ],
-    ]
-}
-
-fn view_footer() -> Node<Msg> {
-    footer![
-        C!["footer"],
-        div![C!["content", "has-text-centered"], p!["footer"]]
-    ]
+pub fn mock_path(mock: &str) -> String {
+    format!("{}/{}", MOCK_PATH, mock)
 }
 
 // ------ ------
 //     Start
 // ------ ------
+
 #[wasm_bindgen(start)]
-pub fn start() {
-    console_error_panic_hook::set_once();
+pub fn run() {
+    log!("Starting app...");
+
     App::start("app", init, update, view);
+
+    log!("App started.");
 }
