@@ -1,6 +1,7 @@
 use crate::domain::user::{Credentials, UNameOrEmail, User, UserId};
 use crate::port::user_port::{AuthError, AuthResult, UserPort};
 use seed::{fetch::fetch, prelude::FetchError};
+use serde_json::error::Error as SerdeError;
 
 pub struct MockUserGateway;
 
@@ -8,8 +9,8 @@ const MOCK_DATA_PATH: &str = "assets/mock/mock_user.json";
 
 async fn get_users() -> Result<Vec<User>, FetchError> {
     let file = &fetch(MOCK_DATA_PATH).await?.text().await?;
-    let users = serde_json::from_str(file);
-    users.unwrap()
+    let users: Result<Vec<User>, SerdeError> = serde_json::from_str(file);
+    users.map_err(|err| FetchError::SerdeError(err))
 }
 
 impl UserPort for MockUserGateway {
