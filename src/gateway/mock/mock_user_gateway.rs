@@ -1,5 +1,6 @@
 use crate::domain::user::{Credentials, UNameOrEmail, User, UserId};
 use crate::port::user_port::{AuthError, AuthResult, UserPort};
+use futures::executor;
 use seed::{fetch::fetch, prelude::FetchError};
 use serde_json::error::Error as SerdeError;
 
@@ -15,7 +16,7 @@ async fn get_users() -> Result<Vec<User>, FetchError> {
 
 impl UserPort for MockUserGateway {
     fn login(&self, credentials: &Credentials) -> AuthResult<User> {
-        let users = get_users();
+        let users = executor::block_on(get_users()).unwrap();
         let ret_user = users
             .into_iter()
             .filter(|user| match &credentials.name_or_email {
@@ -46,7 +47,7 @@ impl UserPort for MockUserGateway {
     }
 
     fn username_taken(&self, username: String) -> AuthResult<bool> {
-        let users = get_users();
+        let users = executor::block_on(get_users()).unwrap();
         Ok(users.into_iter().any(|user| user.username == username))
     }
 }
