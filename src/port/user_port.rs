@@ -1,13 +1,14 @@
 use crate::domain::user;
 use async_trait::async_trait;
 use seed::prelude::wasm_bindgen;
+use serde_json::error::Error as SerdeError;
 
 #[derive(Debug)]
 pub enum AuthError {
     InvalidCredentials,
 }
 
-pub type AuthResult<T> = Result<T, AuthError>;
+pub type AuthResult<T>  = Result<T, AuthError>;
 
 #[async_trait]
 pub trait UserPort {

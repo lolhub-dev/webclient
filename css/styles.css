@@ -1,0 +1,10 @@
+@import 'bulma.min.css';
+@import 'tailwindcss/base';
+
+@import 'fonts.css';
+/* @import 'fontawesome-all.min.css'; */
+
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import 'custom.css';

@@ -1,0 +1,23 @@
+[
+    {
+        "userid": "eac1f07c-133e-4643-9c46-62c80e68c8d0",
+        "username": "machmensch",
+        "name": "Peter",
+        "surname": "Petersen",
+        "email": "peter@petersen.peter"
+    },
+    {
+        "userid": "159e1ab5-58a6-471a-8d1f-1ca214fe3c97",
+        "username": "pilcrow",
+        "name": "Jon",
+        "surename": "Bon Jovi",
+        "email": "deadoralive@aol.com"
+    },
+    {
+        "userid": "c868ea2b-476a-4221-a0c6-3e3fb1bd0cf7",
+        "username": "lignite",
+        "name": "Pat",
+        "surname": "Mann",
+        "email": "manlymanmanson@yahoo.de"
+    }
+]

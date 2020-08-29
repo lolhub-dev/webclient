@@ -9,15 +9,17 @@ pub struct MockUserGateway;
 
 const MOCK_DATA_PATH: &str = "mock_user.json";
 
+// cant do this, since the FetchError internally has something to do with RefCells and thus cannot be transmitted via async functions
+//
 async fn get_users() -> Result<Vec<User>, FetchError> {
     let file = &fetch(mock_path(MOCK_DATA_PATH)).await?.text().await?;
     let users: Result<Vec<User>, SerdeError> = serde_json::from_str(file);
     users.map_err(|err| FetchError::SerdeError(err))
 }
 
+
 #[async_trait]
 impl UserPort for MockUserGateway {
-    //TODO: as soon as async is supported in traits use it !!!
     async fn login(&self, credentials: &Credentials) -> AuthResult<User> {
         //TODO: this is not supported in wasm -> accumulate Future till the end
         let users = get_users().await;
