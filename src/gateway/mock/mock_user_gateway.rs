@@ -1,7 +1,8 @@
 use crate::domain::user::{Credentials, UNameOrEmail, User, UserId};
 use crate::{mock_path, port::user_port::{AuthError, AuthResult, UserPort}};
+use async_trait::async_trait;
 use futures::executor;
-use seed::{fetch::fetch, log, prelude::FetchError};
+use seed::{fetch::fetch, log, prelude::{wasm_bindgen, FetchError}};
 use serde_json::error::Error as SerdeError;
 
 pub struct MockUserGateway;
@@ -14,23 +15,25 @@ async fn get_users() -> Result<Vec<User>, FetchError> {
     users.map_err(|err| FetchError::SerdeError(err))
 }
 
+#[async_trait]
 impl UserPort for MockUserGateway {
     //TODO: as soon as async is supported in traits use it !!!
-    fn login(&self, credentials: &Credentials) -> AuthResult<User> {
-        //TODO: safe handling of future and the Result type and its possible errors
-        let users = executor::block_on(get_users()).unwrap();
-        let ret_user = users
-            .into_iter()
-            .filter(|user| match &credentials.name_or_email {
+    async fn login(&self, credentials: &Credentials) -> AuthResult<User> {
+        //TODO: this is not supported in wasm -> accumulate Future till the end
+        let users = get_users().await;
+        let ret_user = users.map(|users|{
+            users.retain(|user| match &credentials.name_or_email {
                 UNameOrEmail::Username(uname) => user.username == *uname,
                 UNameOrEmail::Email(email) => user.email == *email,
-            })
-            .next();
+            });
+            users.pop()
+            });
 
-        match ret_user {
-            Some(user) => Ok(user),
-            None => Err(AuthError::InvalidCredentials),
-        }
+        let res:AuthResult<User> = match ret_user {
+            Ok(Some(user))=>Ok(user),
+            Ok(None)=>Err(AuthError::InvalidCredentials) ,
+            Err(_) => Err(AuthError::InvalidCredentials)};
+        res
     }
 
     fn logout(&self) -> AuthResult<()> {

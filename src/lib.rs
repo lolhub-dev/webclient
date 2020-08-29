@@ -28,13 +28,11 @@ use seed::{prelude::*, *};
 use std::fmt;
 use MenuVisibility::*;
 
-const TITLE_SUFFIX: &str = "Title Suffix? What is that?";
-// https://mailtolink.me/
+const TITLE_SUFFIX: &str = "Custom League of Legends Gamemodes";
 const USER_AGENT_FOR_PRERENDERING: &str = "ReactSnap";
 const STATIC_PATH: &str = "static";
 const MOCK_PATH: &str = "static/mocks";
 const IMAGES_PATH: &str = "static/images";
-
 const ABOUT: &str = "about";
 
 // ------ ------
@@ -42,10 +40,9 @@ const ABOUT: &str = "about";
 // ------ ------
 
 fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
-    orders
-        .subscribe(Msg::UrlChanged)
-        // .stream(streams::window_event(Ev::Scroll, |_| Msg::Scrolled))
-        .stream(streams::window_event(Ev::Click, |_| Msg::HideMenu));
+    orders.subscribe(Msg::UrlChanged)
+    // .stream(streams::window_event(Ev::Scroll, |_| Msg::Scrolled))
+    .stream(streams::window_event(Ev::Click, |_| Msg::HideMenu));
 
     Model {
         base_url: url.to_base_url(),
@@ -140,6 +137,9 @@ pub struct Model {
     register_password_value: String,
     register_password_comp_value: String,
     register_accepted_tou: bool,
+    //TODO: add input value handlers for login form
+    // login_username_value: String,
+    // login_password_value: String,
 }
 
 pub type Session = Option<AuthResult<user::User>>;
@@ -191,7 +191,7 @@ pub enum Msg {
     HideMenu,
 
     // Login buttons
-    LogIn,
+    LogIn(user::Credentials),
     LogInResult(AuthResult<user::User>),
     LogOut,
     LogOutResult(AuthResult<()>),
@@ -216,6 +216,7 @@ pub enum Msg {
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
         Msg::UrlChanged(subs::UrlChanged(url)) => {
+            log!("url changed to: {}", url);
             model.page = Page::init(url);
         }
         Msg::ScrollToTop => window().scroll_to_with_scroll_to_options(
@@ -226,18 +227,13 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
             model.menu_visibility = Hidden;
         }
         // Login buttons
-        Msg::LogIn => {
+        Msg::LogIn(credentials) => {
             log!("logIn message");
-            // let login_res = Err(AuthError::InvalidCredentials);
-            // TODO: (mock) use_cases asynchronous
-            // let login_res = usecase::user::login_user(
-            // &mock_user_gateway,
-            // &user::Credentials {
-            // name_or_email: user::UNameOrEmail::Email("test".to_string()),
-            // password: "test".to_string(),
-            // },
-            // );
-            // orders.send_msg(Msg::LogInResult(login_res));
+            let mock_user_gateway = MockUserGateway {};
+            let login_res =
+                usecase::user::login_user(&mock_user_gateway, &credentials);
+            log!("login result: {?}", login_res);
+            orders.send_msg(Msg::LogInResult(login_res));
         }
         Msg::LogOut => log!("logOut message"),
         Msg::SignUp => log!("signUp message"),
@@ -278,13 +274,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 // ------ ------
 //     View
 // ------ ------
-
-// Notes:
-// - \u{00A0} is the non-breaking space
-//   - https://codepoints.net/U+00A0
-//
-// - "▶\u{fe0e}" - \u{fe0e} is the variation selector, it prevents ▶ to change to emoji in some browsers
-//   - https://codepoints.net/U+FE0E
 
 pub fn view(model: &Model) -> impl IntoNodes<Msg> {
     div![

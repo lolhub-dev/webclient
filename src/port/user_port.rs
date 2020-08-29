@@ -1,13 +1,17 @@
 use crate::domain::user;
+use async_trait::async_trait;
+use seed::prelude::wasm_bindgen;
 
+#[derive(Debug)]
 pub enum AuthError {
     InvalidCredentials,
 }
 
 pub type AuthResult<T> = Result<T, AuthError>;
 
+#[async_trait]
 pub trait UserPort {
-    fn login(&self, credentials: &user::Credentials) -> AuthResult<user::User>;
+    async fn login(&self, credentials: &user::Credentials) -> AuthResult<user::User>;
     fn logout(&self) -> AuthResult<()>;
     fn register(
         &self,
