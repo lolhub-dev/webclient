@@ -23,8 +23,10 @@ mod utils;
 use crate::domain::user;
 // use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use crate::port::user_port::{AuthError, AuthResult};
+use gateway::mock::mock_user_gateway::MockUserGateway;
 use generated::css_classes::C;
 use seed::{prelude::*, *};
+use serde_json::error::Error as JsonError;
 use std::fmt;
 use MenuVisibility::*;
 
@@ -226,49 +228,10 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         // Login buttons
         Msg::LogIn(credentials) => {
             orders.perform_cmd(async {
-                Msg::LogInResult(async move {
-                    log!("Trying to find stuff");
-                    let file = fetch(utils::mock_path("mock_user.json")).await
-                        .map_err(|_| AuthError::NetworkError)
-                        .unwrap()
-                        .text()
-                        .await
-                        .map_err(|_| AuthError::NetworkError)
-                        .unwrap();
-
-                    let users: Result<
-                        Vec<domain::user::User>,
-                        serde_json::error::Error,
-                    > = serde_json::from_str(&file[..]);
-
-                    log!(users);
-
-                    let ret_user = users
-                        .map(|mut users| {
-                            users
-                            .retain(|user| match &credentials.name_or_email {
-                            domain::user::UNameOrEmail::Username(uname) => user.username == *uname,
-                            domain::user::UNameOrEmail::Email(email) => user.email == *email,
-                        });
-                        users.pop()
-                    });
-
-                    log!(ret_user);
-
-                    let res = match ret_user {
-                        Ok(Some(user)) => Ok(user),
-                        _ => Err(AuthError::InvalidCredentials),
-                    };
-                    log!("Done!");
-                    res
-                }.await)
+                Msg::LogInResult(
+                    MockUserGateway::login(credentials).await,
+                )
             });
-            // log!("logIn message");
-            // let mock_user_gateway = MockUserGateway::default();
-            // let login_res =
-            //     usecase::user::login_user(&mock_user_gateway, &credentials);
-            // log!("login result: {?}", login_res);
-            // orders.send_msg(Msg::LogInResult(login_res));
         }
         Msg::LogOut => log!("logOut message"),
         Msg::SignUp => log!("signUp message"),
