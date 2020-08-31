@@ -1,8 +1,6 @@
 use crate::domain::user;
 use crate::{
-    asset_path,
     generated::css_classes::C,
-    image_src,
     port::user_port::AuthError,
     MenuVisibility::{self, *},
     Model, Msg, Page, Session, Urls,

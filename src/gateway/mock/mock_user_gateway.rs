@@ -1,41 +1,54 @@
 use crate::domain::user::{Credentials, UNameOrEmail, User, UserId};
-use crate::{mock_path, port::user_port::{AuthError, AuthResult, UserPort}};
+use crate::port::user_port::{AuthError, AuthResult, UserPort};
+use crate::utils::mock_path;
 use async_trait::async_trait;
 use futures::executor;
-use seed::{fetch::fetch, log, prelude::{wasm_bindgen, FetchError}};
-use serde_json::error::Error as SerdeError;
+use seed::{
+    fetch::fetch,
+    log,
+    prelude::{wasm_bindgen, FetchError},
+};
+use serde_json::error::Error as JsonError;
 
 pub struct MockUserGateway;
 
 const MOCK_DATA_PATH: &str = "mock_user.json";
 
-// cant do this, since the FetchError internally has something to do with RefCells and thus cannot be transmitted via async functions
-//
 async fn get_users() -> Result<Vec<User>, FetchError> {
-    let file = &fetch(mock_path(MOCK_DATA_PATH)).await?.text().await?;
-    let users: Result<Vec<User>, SerdeError> = serde_json::from_str(file);
+    let file = fetch(mock_path(MOCK_DATA_PATH)).await?.text().await?;
+    let users: Result<Vec<User>, JsonError> = serde_json::from_str(&file[..]);
     users.map_err(|err| FetchError::SerdeError(err))
 }
 
+impl Default for MockUserGateway {
+    fn default() -> MockUserGateway {
+        MockUserGateway {}
+    }
+}
 
 #[async_trait]
 impl UserPort for MockUserGateway {
     async fn login(&self, credentials: &Credentials) -> AuthResult<User> {
-        //TODO: this is not supported in wasm -> accumulate Future till the end
-        let users = get_users().await;
-        let ret_user = users.map(|users|{
-            users.retain(|user| match &credentials.name_or_email {
-                UNameOrEmail::Username(uname) => user.username == *uname,
-                UNameOrEmail::Email(email) => user.email == *email,
-            });
-            users.pop()
-            });
+        Err(AuthError::InvalidCredentials)
+        // let users = get_users().await;
 
-        let res:AuthResult<User> = match ret_user {
-            Ok(Some(user))=>Ok(user),
-            Ok(None)=>Err(AuthError::InvalidCredentials) ,
-            Err(_) => Err(AuthError::InvalidCredentials)};
-        res
+        // let ret_user = users
+        //     .map(|users| {
+        //     users
+        //         .retain(|user| match &credentials.name_or_email {
+        //         UNameOrEmail::Username(uname) => user.username == *uname,
+        //         UNameOrEmail::Email(email) => user.email == *email,
+        //     });
+        //     users
+        //         .pop()
+        // });
+
+        // let res: AuthResult<User> = match ret_user {
+        //     Ok(Some(user)) => Ok(user),
+        //     Ok(None) => Err(AuthError::InvalidCredentials),
+        //     Err(_) => Err(AuthError::InvalidCredentials),
+        // };
+        // res
     }
 
     fn logout(&self) -> AuthResult<()> {

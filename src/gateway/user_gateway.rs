@@ -1,10 +1,12 @@
 use crate::domain::user::{Credentials, User, UserId};
 use crate::port::user_port::{AuthResult, UserPort};
+use async_trait::async_trait;
 
 pub struct UserGateway;
 
+#[async_trait]
 impl UserPort for UserGateway {
-    fn login(&self, credentials: &Credentials) -> AuthResult<User> {
+    async fn login(&self, credentials: &Credentials) -> AuthResult<User> {
         Ok(User::default())
     }
 

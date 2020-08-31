@@ -21,7 +21,7 @@ mod page;
 mod utils;
 
 use crate::domain::user;
-use crate::gateway::mock::mock_user_gateway::MockUserGateway;
+// use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use crate::port::user_port::{AuthError, AuthResult};
 use generated::css_classes::C;
 use seed::{prelude::*, *};
@@ -30,9 +30,6 @@ use MenuVisibility::*;
 
 const TITLE_SUFFIX: &str = "Custom League of Legends Gamemodes";
 const USER_AGENT_FOR_PRERENDERING: &str = "ReactSnap";
-const STATIC_PATH: &str = "static";
-const MOCK_PATH: &str = "static/mocks";
-const IMAGES_PATH: &str = "static/images";
 const ABOUT: &str = "about";
 
 // ------ ------
@@ -228,29 +225,73 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         }
         // Login buttons
         Msg::LogIn(credentials) => {
-            log!("logIn message");
-            let mock_user_gateway = MockUserGateway {};
-            let login_res =
-                usecase::user::login_user(&mock_user_gateway, &credentials);
-            log!("login result: {?}", login_res);
-            orders.send_msg(Msg::LogInResult(login_res));
+            orders.perform_cmd(async {
+                Msg::LogInResult(async move {
+                    log!("Trying to find stuff");
+                    let file = fetch(utils::mock_path("mock_user.json")).await
+                        .map_err(|_| AuthError::NetworkError)
+                        .unwrap()
+                        .text()
+                        .await
+                        .map_err(|_| AuthError::NetworkError)
+                        .unwrap();
+
+                    let users: Result<
+                        Vec<domain::user::User>,
+                        serde_json::error::Error,
+                    > = serde_json::from_str(&file[..]);
+
+                    log!(users);
+
+                    let ret_user = users
+                        .map(|mut users| {
+                            users
+                            .retain(|user| match &credentials.name_or_email {
+                            domain::user::UNameOrEmail::Username(uname) => user.username == *uname,
+                            domain::user::UNameOrEmail::Email(email) => user.email == *email,
+                        });
+                        users.pop()
+                    });
+
+                    log!(ret_user);
+
+                    let res = match ret_user {
+                        Ok(Some(user)) => Ok(user),
+                        _ => Err(AuthError::InvalidCredentials),
+                    };
+                    log!("Done!");
+                    res
+                }.await)
+            });
+            // log!("logIn message");
+            // let mock_user_gateway = MockUserGateway::default();
+            // let login_res =
+            //     usecase::user::login_user(&mock_user_gateway, &credentials);
+            // log!("login result: {?}", login_res);
+            // orders.send_msg(Msg::LogInResult(login_res));
         }
         Msg::LogOut => log!("logOut message"),
         Msg::SignUp => log!("signUp message"),
         Msg::LogInResult(auth_result) => model.session = Some(auth_result),
         Msg::LogOutResult(Ok(_)) => model.session = None,
-        Msg::LogOutResult(Err(auth_err)) => {
+        Msg::LogOutResult(Err(_)) => {
             orders.skip();
             ()
         }
-        Msg::SignUpResult(auth_result) => model.session = Some(auth_result),
+        Msg::SignUpResult(auth_result) => {
+            model.session = Some(auth_result)
+        }
 
         // Login modal visibility
         Msg::ToggleLoginModal => {
             model.auth_modal_visible = !model.auth_modal_visible
         }
-        Msg::RegisterTabActive => model.auth_modal_register_tab_active = true,
-        Msg::LoginTabActive => model.auth_modal_register_tab_active = false,
+        Msg::RegisterTabActive => {
+            model.auth_modal_register_tab_active = true
+        }
+        Msg::LoginTabActive => {
+            model.auth_modal_register_tab_active = false
+        }
 
         // Login/Register form
         Msg::ChangeRegisterEmailValue(email_address) => {
@@ -300,18 +341,6 @@ fn view_content(model: &Model) -> Node<Msg> {
         Page::About => page::about::view(),
         Page::NotFound => page::not_found::view(),
     }]
-}
-
-pub fn image_src(image: &str) -> String {
-    format!("{}/{}", IMAGES_PATH, image)
-}
-
-pub fn asset_path(asset: &str) -> String {
-    format!("{}/{}", STATIC_PATH, asset)
-}
-
-pub fn mock_path(mock: &str) -> String {
-    format!("{}/{}", MOCK_PATH, mock)
 }
 
 // ------ ------

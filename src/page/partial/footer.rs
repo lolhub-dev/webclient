@@ -1,4 +1,4 @@
-use crate::{generated::css_classes::C, image_src, Msg};
+use crate::{generated::css_classes::C, Msg};
 use seed::{prelude::*, *};
 
 pub fn view() -> Node<Msg> {

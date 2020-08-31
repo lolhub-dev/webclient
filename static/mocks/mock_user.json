@@ -10,7 +10,7 @@
         "userid": "159e1ab5-58a6-471a-8d1f-1ca214fe3c97",
         "username": "pilcrow",
         "name": "Jon",
-        "surename": "Bon Jovi",
+        "surname": "Bon Jovi",
         "email": "deadoralive@aol.com"
     },
     {
@@ -19,5 +19,12 @@
         "name": "Pat",
         "surname": "Mann",
         "email": "manlymanmanson@yahoo.de"
+    },
+{
+        "userid": "c5913e70-b88d-49f9-8de3-80f7e06def4c",
+        "username": "test",
+        "name": "Party",
+        "surname": "Möbel",
+        "email": "hallopen@yahoo.de"
     }
 ]

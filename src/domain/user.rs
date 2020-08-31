@@ -12,13 +12,13 @@ pub struct User {
     pub email: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum UNameOrEmail {
     Username(String),
     Email(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Credentials {
     pub name_or_email: UNameOrEmail,
     pub password: String,

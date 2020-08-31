@@ -1,5 +1,5 @@
 use crate::component::hero_component;
-use crate::{generated::css_classes::C, image_src, Model, Msg};
+use crate::{generated::css_classes::C, Model, Msg};
 use seed::{prelude::*, *};
 
 pub fn view(model: &Model) -> Node<Msg> {
