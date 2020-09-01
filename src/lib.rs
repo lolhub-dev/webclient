@@ -23,7 +23,6 @@ mod utils;
 use crate::domain::user::{Credentials, UNameOrEmail, User};
 // use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use crate::port::user_port::{AuthError, AuthResult};
-use gateway::mock::mock_user_gateway::MockUserGateway;
 use generated::css_classes::C;
 use seed::{prelude::*, *};
 use serde_json::error::Error as JsonError;
@@ -56,6 +55,8 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         register_username_value: String::from(""),
         register_password_value: String::from(""),
         register_password_comp_value: String::from(""),
+        login_username_value: String::from(""),
+        login_password_value: String::from(""),
         register_accepted_tou: false,
     }
 }
@@ -100,17 +101,15 @@ pub struct Model {
     pub menu_visibility: MenuVisibility,
     pub in_prerendering: bool,
     pub session: Session,
-    // auth_modal_visible: bool,
-    // auth_modal_register_tab_active: bool,
     auth_modal_state: LoginModalState,
     register_email_value: String,
     register_username_value: String,
     register_password_value: String,
     register_password_comp_value: String,
     register_accepted_tou: bool,
-    //TODO: add input value handlers for login form
-    // login_username_value: String,
-    // login_password_value: String,
+
+    login_username_value: String,
+    login_password_value: String,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -187,6 +186,8 @@ pub enum Msg {
     ChangeRegisterPasswordValue(String),
     ChangeRegisterPasswordCompValue(String),
     ToggleRegisterAcceptedTou,
+    ChangeLoginUsernameValue(String),
+    ChangeLoginPasswordValue(String),
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
@@ -207,7 +208,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
             orders.perform_cmd(async {
                 Msg::LogInResult(
                     async move {
-                        log!("Trying to find stuff");
                         let file =
                             fetch(utils::mock_path("mock_user.json"))
                                 .await
@@ -220,8 +220,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                             Vec<User>,
                             serde_json::error::Error,
                         > = serde_json::from_str(&file[..]);
-
-                        log!(users);
 
                         let ret_user = users.map(|mut users| {
                             users.retain(|user| {
@@ -246,7 +244,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 
                         log!("Done!");
                         res
-                    }.await
+                    }
+                    .await,
                 )
             });
         }
@@ -287,6 +286,12 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
             model.register_password_value = password
         }
         Msg::ChangeRegisterPasswordCompValue(password) => {
+            model.register_password_comp_value = password
+        }
+        Msg::ChangeLoginUsernameValue(username) => {
+            model.register_password_comp_value = username
+        }
+        Msg::ChangeLoginPasswordValue(password) => {
             model.register_password_comp_value = password
         }
         Msg::ToggleRegisterAcceptedTou => {

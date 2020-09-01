@@ -63,7 +63,9 @@ pub fn view(model: &Model) -> Node<Msg> {
     ]
 }
 
-fn view_login(_: &Model) -> Node<Msg> {
+fn view_login(model: &Model) -> Node<Msg> {
+    let username = model.login_username_value.clone();
+    let password = model.login_password_value.clone();
     div![
         div![
             C!["image", "is-19by9", "is-paragraph"],
@@ -78,7 +80,10 @@ fn view_login(_: &Model) -> Node<Msg> {
                     C!["control", "has-icons-left", "has-icons-right"],
                     input![
                         C!["input",],
-                        attrs![At::from("placeholder")=>"Username/Email", At::from("type")=>"email", At::from("autocomplete") =>"username"]
+                        attrs![At::from("placeholder")=>"Username/Email", At::from("type")=>"email", At::from("autocomplete") =>"username"],
+                        input_ev(Ev::Input, |event| {
+                            Msg::ChangeLoginUsernameValue(event)
+                        })
                     ],
                     span![
                         C!["icon", "is-small", "is-left"],
@@ -96,7 +101,10 @@ fn view_login(_: &Model) -> Node<Msg> {
                     C!["control", "has-icons-left", "has-icons-right"],
                     input![
                         C!["input",],
-                        attrs![At::from("placeholder")=>"Password", At::from("type")=>"password", At::from("autocomplete") => "current-password"]
+                        attrs![At::from("placeholder")=>"Password", At::from("type")=>"password", At::from("autocomplete") => "current-password"],
+                        input_ev(Ev::Input, |event| {
+                            Msg::ChangeLoginPasswordValue(event)
+                        })
                     ],
                     span![
                         C!["icon", "is-small", "is-left"],
@@ -121,10 +129,11 @@ fn view_login(_: &Model) -> Node<Msg> {
                                         event.stop_propagation();
                                         Msg::LogIn(user::Credentials {
                                             name_or_email:
+                                                // TODO: detect username or email
                                                 UNameOrEmail::Username(
-                                                    String::from("test"),
+                                                    username
                                                 ),
-                                            password: String::from("test"),
+                                                password
                                         })
                                     }),
                                 ]
