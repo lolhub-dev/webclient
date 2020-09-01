@@ -1,6 +1,6 @@
 use crate::domain::user;
 use crate::utils;
-use crate::{Model, Msg};
+use crate::{LoginModalState, Model, Msg};
 use seed::{prelude::*, *};
 use user::UNameOrEmail;
 
@@ -17,7 +17,7 @@ pub fn view(model: &Model) -> Node<Msg> {
                         C!["tabs"],
                         ul![
                             li![
-                                IF![!model.auth_modal_register_tab_active => C!["is_active"]],
+                                IF![model.auth_modal_state == LoginModalState::VisibleLogin => C!["is_active"]],
                                 a!["Login"],
                                 ev(Ev::Click, |event| {
                                     event.stop_propagation();
@@ -25,7 +25,7 @@ pub fn view(model: &Model) -> Node<Msg> {
                                 })
                             ],
                             li![
-                                IF![model.auth_modal_register_tab_active => C!["is_active"]],
+                                IF![model.auth_modal_state == LoginModalState::VisibleRegister => C!["is_active"]],
                                 a!["Register"],
                                 ev(Ev::Click, |event| {
                                     event.stop_propagation();
@@ -34,18 +34,25 @@ pub fn view(model: &Model) -> Node<Msg> {
                             ]
                         ]
                     ],
-                    IF![!model.auth_modal_register_tab_active =>view_login(model)],
-                    IF![model.auth_modal_register_tab_active =>view_register(model)]
+                    match model.auth_modal_state {
+                        LoginModalState::VisibleLogin => view_login(model),
+                        LoginModalState::VisibleRegister =>
+                            view_register(model),
+                        _ => a![],
+                    }
                 ]
             ]
         ]
     ];
     let login_modal_toggle_handler = ev(Ev::Click, |event| {
         event.stop_propagation();
-        Msg::ToggleLoginModal
+        Msg::HideLoginModal
     });
     div![
-        C!["modal", IF![model.auth_modal_visible => "is-active"]],
+        C![
+            "modal",
+            IF![not(matches!(model.auth_modal_state, LoginModalState::Hidden)) => "is-active"]
+        ],
         div![C!["modal-background"], login_modal_toggle_handler.clone()],
         login_modal_content,
         button![
@@ -56,7 +63,7 @@ pub fn view(model: &Model) -> Node<Msg> {
     ]
 }
 
-fn view_login(model: &Model) -> Node<Msg> {
+fn view_login(_: &Model) -> Node<Msg> {
     div![
         div![
             C!["image", "is-19by9", "is-paragraph"],
@@ -127,7 +134,10 @@ fn view_login(model: &Model) -> Node<Msg> {
                 ],
                 div![
                     C!["level-right"],
-                    div![C!["level-item"], a!["Forgot Username/Password?"]]
+                    div![
+                        C!["level-item"],
+                        a!["Forgot Username/Password?"]
+                    ]
                 ]
             ]
         ]
@@ -135,9 +145,10 @@ fn view_login(model: &Model) -> Node<Msg> {
 }
 
 fn view_register(model: &Model) -> Node<Msg> {
-    let passwords_matching =
-        model.register_password_value == model.register_password_comp_value;
-    let is_valid_username: Result<(), ()> = Ok(()); // TODO: actually check the username availability in the backend!
+    let passwords_matching = model.register_password_value
+        == model.register_password_comp_value;
+    // TODO: actually check the username availability in the backend!
+    let is_valid_username: Result<(), ()> = Ok(());
     let is_valid_email_address =
         utils::check_valid_email(&model.register_email_value);
     // TODO: also check whether the email and username are already taken !!!

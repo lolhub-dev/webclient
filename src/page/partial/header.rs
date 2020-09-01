@@ -137,12 +137,12 @@ fn view_buttons_for_anonymous_user() -> Vec<Node<Msg>> {
         a![
             C!["button", "is-primary"],
             strong!["Sign up"],
-            ev(Ev::Click, |_| Msg::ToggleLoginModal),
+            ev(Ev::Click, |_| Msg::RegisterTabActive),
         ],
         a![
             C!["button", "is-light"],
             "Log in",
-            ev(Ev::Click, |_| Msg::ToggleLoginModal),
+            ev(Ev::Click, |_| Msg::LoginTabActive),
         ],
     ]
 }

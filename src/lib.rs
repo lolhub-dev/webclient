@@ -20,7 +20,7 @@ mod generated;
 mod page;
 mod utils;
 
-use crate::domain::user;
+use crate::domain::user::{Credentials, UNameOrEmail, User};
 // use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use crate::port::user_port::{AuthError, AuthResult};
 use generated::css_classes::C;
@@ -47,9 +47,9 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         menu_visibility: Hidden,
         in_prerendering: is_in_prerendering(),
         session: None,
-
-        auth_modal_visible: false,
-        auth_modal_register_tab_active: false,
+        auth_modal_state: LoginModalState::Hidden,
+        // auth_modal_visible: false,
+        // auth_modal_register_tab_active: false,
         register_email_value: String::from(""),
         register_username_value: String::from(""),
         register_password_value: String::from(""),
@@ -98,37 +98,9 @@ pub struct Model {
     pub menu_visibility: MenuVisibility,
     pub in_prerendering: bool,
     pub session: Session,
-
-    // @TODO: Refactor (?) Should probably encapsulate all the register and login related
-    // stuff in a separate struct.  Something like
-    //
-    // struct Model {
-    //    ...
-    //    register_context: RegisterContext
-    //    ...
-    // }
-    //
-    // and then
-    //
-    // struct RegisterContext {
-    //     email: String,
-    //     username: String,
-    //     password: String,
-    //     password_comp: String,
-    //     accepted_tou: bool
-    // }
-    //
-    // Maybe also LoginModalState like
-    //
-    // enum LoginModalState {
-    //     Hidden,
-    //     VisibleRegister,
-    //     VisibleLogin
-    // }
-    //
-    // to reduce the number of booleans in our model
-    auth_modal_visible: bool,
-    auth_modal_register_tab_active: bool,
+    // auth_modal_visible: bool,
+    // auth_modal_register_tab_active: bool,
+    auth_modal_state: LoginModalState,
     register_email_value: String,
     register_username_value: String,
     register_password_value: String,
@@ -139,11 +111,18 @@ pub struct Model {
     // login_password_value: String,
 }
 
-pub type Session = Option<AuthResult<user::User>>;
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub enum LoginModalState {
+    Hidden,
+    VisibleLogin,
+    VisibleRegister,
+}
+
+pub type Session = Option<AuthResult<User>>;
 
 // ------ Page ------
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Page {
     Home,
     About,
@@ -188,17 +167,15 @@ pub enum Msg {
     HideMenu,
 
     // Login buttons
-    LogIn(user::Credentials),
-    LogInResult(AuthResult<user::User>),
+    LogIn(Credentials),
+    LogInResult(AuthResult<User>),
     LogOut,
     LogOutResult(AuthResult<()>),
     SignUp,
-    SignUpResult(AuthResult<user::User>),
+    SignUpResult(AuthResult<User>),
 
     // Login modal visibility
-    // @TODO: Could change this to HideLoginModal and then send this from auth_component
-    ToggleLoginModal,
-    // @TODO Send these messages from the respective button in the navbar
+    HideLoginModal,
     RegisterTabActive,
     LoginTabActive,
 
@@ -226,51 +203,56 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         // Login buttons
         Msg::LogIn(credentials) => {
             orders.perform_cmd(async {
-                Msg::LogInResult(async move {
-                    log!("Trying to find stuff");
-                    let file = fetch(utils::mock_path("mock_user.json")).await
-                        .map_err(|_| AuthError::NetworkError)
-                        .unwrap()
-                        .text()
-                        .await
-                        .map_err(|_| AuthError::NetworkError)
-                        .unwrap();
+                Msg::LogInResult(
+                    async move {
+                        log!("Trying to find stuff");
+                        let file =
+                            fetch(utils::mock_path("mock_user.json"))
+                                .await
+                                .map_err(|_| AuthError::NetworkError)?
+                                .text()
+                                .await
+                                .map_err(|_| AuthError::NetworkError)?;
 
-                    let users: Result<
-                        Vec<domain::user::User>,
-                        serde_json::error::Error,
-                    > = serde_json::from_str(&file[..]);
+                        let users: Result<
+                            Vec<User>,
+                            serde_json::error::Error,
+                        > = serde_json::from_str(&file[..]);
 
-                    log!(users);
+                        log!(users);
 
-                    let ret_user = users
-                        .map(|mut users| {
-                            users
-                            .retain(|user| match &credentials.name_or_email {
-                            domain::user::UNameOrEmail::Username(uname) => user.username == *uname,
-                            domain::user::UNameOrEmail::Email(email) => user.email == *email,
+                        let ret_user = users.map(|mut users| {
+                            users.retain(|user| {
+                                match &credentials.name_or_email {
+                                    UNameOrEmail::Username(uname) => {
+                                        user.username == *uname
+                                    }
+                                    UNameOrEmail::Email(email) => {
+                                        user.email == *email
+                                    }
+                                }
+                            });
+                            users.pop()
                         });
-                        users.pop()
-                    });
 
-                    log!(ret_user);
+                        log!(ret_user);
 
-                    let res = match ret_user {
-                        Ok(Some(user)) => Ok(user),
-                        _ => Err(AuthError::InvalidCredentials),
-                    };
-                    log!("Done!");
-                    res
-                }.await)
+                        let res = match ret_user {
+                            Ok(Some(user)) => Ok(user),
+                            _ => Err(AuthError::InvalidCredentials),
+                        };
+
+                        log!("Done!");
+                        res
+                    }
+                    .await,
+                )
             });
-            // log!("logIn message");
-            // let mock_user_gateway = MockUserGateway::default();
-            // let login_res =
-            //     usecase::user::login_user(&mock_user_gateway, &credentials);
-            // log!("login result: {?}", login_res);
-            // orders.send_msg(Msg::LogInResult(login_res));
         }
-        Msg::LogOut => log!("logOut message"),
+        Msg::LogOut => {
+            orders.send_msg(Msg::LogOutResult(Ok(())));
+            ()
+        }
         Msg::SignUp => log!("signUp message"),
         Msg::LogInResult(auth_result) => model.session = Some(auth_result),
         Msg::LogOutResult(Ok(_)) => model.session = None,
@@ -283,14 +265,14 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         }
 
         // Login modal visibility
-        Msg::ToggleLoginModal => {
-            model.auth_modal_visible = !model.auth_modal_visible
+        Msg::HideLoginModal => {
+            model.auth_modal_state = LoginModalState::Hidden
         }
         Msg::RegisterTabActive => {
-            model.auth_modal_register_tab_active = true
+            model.auth_modal_state = LoginModalState::VisibleRegister
         }
         Msg::LoginTabActive => {
-            model.auth_modal_register_tab_active = false
+            model.auth_modal_state = LoginModalState::VisibleLogin
         }
 
         // Login/Register form
