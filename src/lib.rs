@@ -23,8 +23,10 @@ mod utils;
 use crate::domain::user::{Credentials, UNameOrEmail, User};
 // use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use crate::port::user_port::{AuthError, AuthResult};
+use gateway::mock::mock_user_gateway::MockUserGateway;
 use generated::css_classes::C;
 use seed::{prelude::*, *};
+use serde_json::error::Error as JsonError;
 use std::fmt;
 use MenuVisibility::*;
 
@@ -244,8 +246,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 
                         log!("Done!");
                         res
-                    }
-                    .await,
+                    }.await
                 )
             });
         }
