@@ -129,7 +129,6 @@ fn view_login(model: &Model) -> Node<Msg> {
                                         event.stop_propagation();
                                         Msg::LogIn(user::Credentials {
                                             name_or_email:
-                                                // TODO: detect username or email
                                                 UNameOrEmail::Username(
                                                     username
                                                 ),

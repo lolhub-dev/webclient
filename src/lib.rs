@@ -23,12 +23,12 @@ mod utils;
 use crate::domain::user::{Credentials, UNameOrEmail, User};
 // use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use crate::port::user_port::{AuthError, AuthResult};
+use gateway::mock::mock_user_gateway::MockUserGateway;
 use generated::css_classes::C;
 use seed::{prelude::*, *};
 use serde_json::error::Error as JsonError;
 use std::fmt;
 use MenuVisibility::*;
-use gateway::mock::mock_user_gateway::MockUserGateway;
 
 const TITLE_SUFFIX: &str = "Custom League of Legends Gamemodes";
 const USER_AGENT_FOR_PRERENDERING: &str = "ReactSnap";
@@ -206,7 +206,11 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         }
         // Login buttons
         Msg::LogIn(credentials) => {
-            orders.perform_cmd( MockUserGateway::login(credentials));
+            orders.perform_cmd(async {
+                let res = MockUserGateway::login(credentials).await;
+                log!(res);
+                Msg::LogInResult(res)
+            });
         }
         Msg::LogOut => {
             orders.send_msg(Msg::LogOutResult(Ok(())));
@@ -248,10 +252,10 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
             model.register_password_comp_value = password
         }
         Msg::ChangeLoginUsernameValue(username) => {
-            model.register_password_comp_value = username
+            model.login_username_value = username
         }
         Msg::ChangeLoginPasswordValue(password) => {
-            model.register_password_comp_value = password
+            model.login_password_value = password
         }
         Msg::ToggleRegisterAcceptedTou => {
             model.register_accepted_tou = !model.register_accepted_tou
