@@ -206,47 +206,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         Msg::LogIn(credentials) => {
             orders.perform_cmd(async {
                 Msg::LogInResult(
-                    async move {
-                        log!("Trying to find stuff");
-                        let file =
-                            fetch(utils::mock_path("mock_user.json"))
-                                .await
-                                .map_err(|_| AuthError::NetworkError)?
-                                .text()
-                                .await
-                                .map_err(|_| AuthError::NetworkError)?;
-
-                        let users: Result<
-                            Vec<User>,
-                            serde_json::error::Error,
-                        > = serde_json::from_str(&file[..]);
-
-                        log!(users);
-
-                        let ret_user = users.map(|mut users| {
-                            users.retain(|user| {
-                                match &credentials.name_or_email {
-                                    UNameOrEmail::Username(uname) => {
-                                        user.username == *uname
-                                    }
-                                    UNameOrEmail::Email(email) => {
-                                        user.email == *email
-                                    }
-                                }
-                            });
-                            users.pop()
-                        });
-
-                        log!(ret_user);
-
-                        let res = match ret_user {
-                            Ok(Some(user)) => Ok(user),
-                            _ => Err(AuthError::InvalidCredentials),
-                        };
-
-                        log!("Done!");
-                        res
-                    }.await
+                    MockUserGateway::login(credentials).await
                 )
             });
         }
