@@ -28,6 +28,7 @@ use seed::{prelude::*, *};
 use serde_json::error::Error as JsonError;
 use std::fmt;
 use MenuVisibility::*;
+use gateway::mock::mock_user_gateway::MockUserGateway;
 
 const TITLE_SUFFIX: &str = "Custom League of Legends Gamemodes";
 const USER_AGENT_FOR_PRERENDERING: &str = "ReactSnap";
@@ -205,49 +206,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         }
         // Login buttons
         Msg::LogIn(credentials) => {
-            orders.perform_cmd(async {
-                Msg::LogInResult(
-                    async move {
-                        let file =
-                            fetch(utils::mock_path("mock_user.json"))
-                                .await
-                                .map_err(|_| AuthError::NetworkError)?
-                                .text()
-                                .await
-                                .map_err(|_| AuthError::NetworkError)?;
-
-                        let users: Result<
-                            Vec<User>,
-                            serde_json::error::Error,
-                        > = serde_json::from_str(&file[..]);
-
-                        let ret_user = users.map(|mut users| {
-                            users.retain(|user| {
-                                match &credentials.name_or_email {
-                                    UNameOrEmail::Username(uname) => {
-                                        user.username == *uname
-                                    }
-                                    UNameOrEmail::Email(email) => {
-                                        user.email == *email
-                                    }
-                                }
-                            });
-                            users.pop()
-                        });
-
-                        log!(ret_user);
-
-                        let res = match ret_user {
-                            Ok(Some(user)) => Ok(user),
-                            _ => Err(AuthError::InvalidCredentials),
-                        };
-
-                        log!("Done!");
-                        res
-                    }
-                    .await,
-                )
-            });
+            orders.perform_cmd( MockUserGateway::login(credentials));
         }
         Msg::LogOut => {
             orders.send_msg(Msg::LogOutResult(Ok(())));
