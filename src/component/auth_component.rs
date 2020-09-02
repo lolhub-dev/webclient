@@ -130,9 +130,9 @@ fn view_login(model: &Model) -> Node<Msg> {
                                         Msg::LogIn(user::Credentials {
                                             name_or_email:
                                                 UNameOrEmail::Username(
-                                                    username
+                                                    username,
                                                 ),
-                                                password
+                                            password,
                                         })
                                     }),
                                 ]

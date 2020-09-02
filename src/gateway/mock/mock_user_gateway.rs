@@ -28,12 +28,6 @@ async fn get_users() -> Result<Vec<User>, JsonError> {
 impl MockUserGateway {
     pub async fn login(credentials: Credentials) -> AuthResult<User> {
         let users = get_users().await;
-
-        log!(
-            "matching against {} and {}",
-            credentials.name_or_email,
-            credentials.password
-        );
         // TODO: how to model username check here ? Should this be done here, or is this a server
         // thing
         let ret_user = users.map(|mut users| {

@@ -14,6 +14,7 @@ pub mod domain;
 pub mod driver;
 pub mod gateway;
 pub mod port;
+pub mod service;
 pub mod usecase;
 
 mod generated;
@@ -23,7 +24,7 @@ mod utils;
 use crate::domain::user::{Credentials, UNameOrEmail, User};
 // use crate::gateway::mock::mock_user_gateway::MockUserGateway;
 use crate::port::user_port::{AuthError, AuthResult};
-use gateway::mock::mock_user_gateway::MockUserGateway;
+use gateway::{user_gateway::UserGateway, mock::mock_user_gateway::MockUserGateway};
 use generated::css_classes::C;
 use seed::{prelude::*, *};
 use serde_json::error::Error as JsonError;
@@ -207,7 +208,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         // Login buttons
         Msg::LogIn(credentials) => {
             orders.perform_cmd(async {
-                let res = MockUserGateway::login(credentials).await;
+                // let res = MockUserGateway::login(credentials).await;
+                let res = UserGateway::login(credentials).await;
                 log!(res);
                 Msg::LogInResult(res)
             });

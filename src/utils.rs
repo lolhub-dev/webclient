@@ -12,7 +12,6 @@ pub fn check_valid_email(email: &str) -> bool {
     email_regex.is_match(email)
 }
 
-
 pub fn image_src(image: &str) -> String {
     format!("{}/{}", IMAGES_PATH, image)
 }

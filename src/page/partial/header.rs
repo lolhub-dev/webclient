@@ -128,7 +128,11 @@ fn view_buttons_for_logged_in_user(
 ) -> Vec<Node<Msg>> {
     vec![
         a![C!["button", "is-primary"], strong![&user.username],],
-        a![C!["button", "is-light"], "Log out", ev(Ev::Click, |_| Msg::LogOut),],
+        a![
+            C!["button", "is-light"],
+            "Log out",
+            ev(Ev::Click, |_| Msg::LogOut),
+        ],
     ]
 }
 

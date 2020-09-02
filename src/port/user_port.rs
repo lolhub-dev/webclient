@@ -9,10 +9,7 @@ pub enum AuthError {
 pub type AuthResult<T> = Result<T, AuthError>;
 
 pub trait UserPort {
-    fn login(
-        &self,
-        credentials: &Credentials,
-    ) -> AuthResult<User>;
+    fn login(&self, credentials: &Credentials) -> AuthResult<User>;
     fn logout(&self) -> AuthResult<()>;
     fn register(
         &self,

@@ -17,6 +17,14 @@ pub enum UNameOrEmail {
     Username(String),
     Email(String),
 }
+impl Into<String> for UNameOrEmail {
+    fn into(self) -> String {
+        match self {
+            UNameOrEmail::Username(username) => return username,
+            UNameOrEmail::Email(email) => return email,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Credentials {
