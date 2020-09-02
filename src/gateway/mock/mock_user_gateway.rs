@@ -3,7 +3,7 @@ use crate::{
     port::user_port::{AuthError, AuthResult},
     utils,
 };
-use seed::fetch::fetch;
+use seed::{fetch::fetch, log};
 use serde_json::error::Error as JsonError;
 
 pub struct MockUserGateway;
@@ -29,6 +29,13 @@ impl MockUserGateway {
     pub async fn login(credentials: Credentials) -> AuthResult<User> {
         let users = get_users().await;
 
+        log!(
+            "matching against {} and {}",
+            credentials.name_or_email,
+            credentials.password
+        );
+        // TODO: how to model username check here ? Should this be done here, or is this a server
+        // thing
         let ret_user = users.map(|mut users| {
             users.retain(|user| match &credentials.name_or_email {
                 UNameOrEmail::Username(uname) => user.username == *uname,
