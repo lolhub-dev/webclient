@@ -20,13 +20,12 @@ mod generated;
 mod page;
 mod utils;
 
-use crate::domain::user::{Credentials, UNameOrEmail, User};
+use crate::domain::user::{Credentials, User};
 // use crate::gateway::mock::mock_user_gateway::MockUserGateway;
-use crate::port::user_port::{AuthError, AuthResult};
+use crate::port::user_port::AuthResult;
 use gateway::mock::mock_user_gateway::MockUserGateway;
 use generated::css_classes::C;
 use seed::{prelude::*, *};
-use serde_json::error::Error as JsonError;
 use std::fmt;
 use MenuVisibility::*;
 
@@ -173,7 +172,8 @@ pub enum Msg {
     LogInResult(AuthResult<User>),
     LogOut,
     LogOutResult(AuthResult<()>),
-    SignUp,
+    // @TODO: Refactor. This is ugly as fuck!
+    SignUp(String, String, String, String, String),
     SignUpResult(AuthResult<User>),
 
     // Login modal visibility
@@ -206,17 +206,32 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         }
         // Login buttons
         Msg::LogIn(credentials) => {
-            orders.perform_cmd(async {
-                let res = MockUserGateway::login(credentials).await;
+            orders.perform_cmd(async move {
+                let res = MockUserGateway::login(&credentials).await;
                 log!(res);
                 Msg::LogInResult(res)
             });
         }
         Msg::LogOut => {
-            orders.send_msg(Msg::LogOutResult(Ok(())));
-            ()
+            orders.perform_cmd(async {
+                let res = MockUserGateway::logout().await;
+                log!(res);
+                Msg::LogOutResult(res)
+            });
         }
-        Msg::SignUp => log!("signUp message"),
+        Msg::SignUp(username, name, surname, email, password) => {
+            orders.perform_cmd(async move {
+                let res = MockUserGateway::register(
+                    &username,
+                    &name,
+                    &surname,
+                    &email,
+                    &password
+                ).await;
+                log!(res);
+                Msg::SignUpResult(res)
+            });
+        }
         Msg::LogInResult(auth_result) => model.session = Some(auth_result),
         Msg::LogOutResult(Ok(_)) => model.session = None,
         Msg::LogOutResult(Err(_)) => {

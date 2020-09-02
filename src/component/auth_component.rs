@@ -1,5 +1,6 @@
 use crate::domain::user;
 use crate::utils;
+use crate::MockUserGateway;
 use crate::{LoginModalState, Model, Msg};
 use seed::{prelude::*, *};
 use user::UNameOrEmail;
@@ -130,9 +131,9 @@ fn view_login(model: &Model) -> Node<Msg> {
                                         Msg::LogIn(user::Credentials {
                                             name_or_email:
                                                 UNameOrEmail::Username(
-                                                    username
+                                                    username,
                                                 ),
-                                                password
+                                            password,
                                         })
                                     }),
                                 ]
@@ -160,6 +161,11 @@ fn view_register(model: &Model) -> Node<Msg> {
     let is_valid_email_address =
         utils::check_valid_email(&model.register_email_value);
     // TODO: also check whether the email and username are already taken !!!
+    let username_taken =
+        MockUserGateway::username_taken(&model.register_username_value);
+    let email_taken =
+        MockUserGateway::email_taken(&model.register_email_value);
+
     form![
         div![
             C!["field"],
@@ -275,7 +281,17 @@ fn view_register(model: &Model) -> Node<Msg> {
                             a![
                                 C!["button ", "is-success",],
                                 IF![!model.register_accepted_tou=>attrs!(At::from("disabled")=>"")],
-                                "Register"
+                                "Register",
+                                ev(Ev::Click, |event| {
+                                    event.stop_propagation();
+                                    Msg::SignUp(
+                                        String::from("test"),
+                                        String::from("test"),
+                                        String::from("test"),
+                                        String::from("test@test.de"),
+                                        String::from("hallo123"),
+                                    )
+                                }),
                             ]
                         ],
                     ]

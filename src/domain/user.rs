@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 pub type UserId = Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub userid: UserId,
     pub username: String,
@@ -53,3 +53,11 @@ impl Default for User {
         }
     }
 }
+
+impl PartialEq for User {
+    fn eq(&self, other: &Self) -> bool {
+        self.userid == other.userid
+    }
+}
+
+impl Eq for User {}

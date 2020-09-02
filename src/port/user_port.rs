@@ -4,6 +4,8 @@ use crate::domain::user::{Credentials, User};
 pub enum AuthError {
     InvalidCredentials,
     NetworkError,
+    UsernameTaken,
+    EmailTaken
 }
 
 pub type AuthResult<T> = Result<T, AuthError>;
