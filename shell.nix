@@ -16,5 +16,6 @@ pkgs.mkShell {
     cargo-web
     nodejs
     yarn
+    openssl
   ];
 }
