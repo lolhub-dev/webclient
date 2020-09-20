@@ -1,0 +1,95 @@
+type Query {
+  helloWorld : String!
+}
+
+type Mutation {
+      register(
+        username: String!
+        firstname: String!,
+        lastname: String!,
+        email: String!
+        password: String!
+      ) : User!
+      login(
+        username: String!
+        password: String!
+      ) : User!
+
+      create(kind: LobbyKind!): Lobby!,
+
+      join(lobby: String!, team: TeamColor!): Lobby!
+}
+
+type Subscription {
+      joined(lobby: String!): UserJoined!
+}
+
+interface UserBase {
+      username: String!
+      firstname: String!
+      lastname: String!
+}
+
+type User implements UserBase {
+	username: String!
+	firstname: String!
+	lastname: String!
+	email: String!
+	token: String!
+	verified: VerificationStatus!
+}
+
+type UserInfo implements UserBase {
+	username: String!
+	firstname: String!
+	lastname: String!
+}
+
+enum VerificationStatus {
+	UNVERIFIED
+	VERIFIED
+	SUMMONER_VERIFIED
+}
+
+# #### LOBBY #####
+
+type Lobby {
+	_id: String!
+	state: LobbyState!
+	kind: LobbyKind!
+	creator: String!
+	teams: Teams!
+}
+
+type Teams {
+	blueTeam: Team!
+	redTeam: Team!
+}
+
+type Team {
+	members: [String!]!
+}
+
+enum TeamColor {
+	RED, 
+	BLUE
+}
+
+enum LobbyState {
+	WAITING
+	FULL
+	CLOSED
+	OPEN
+}
+
+enum LobbyKind {
+	PRIVATE
+	PUBLIC
+	HIDDEN
+}
+
+# #### SUBSCRIPTION MESSAGES #####
+
+type UserJoined {
+	username : String!
+}

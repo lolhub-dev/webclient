@@ -1,0 +1,12 @@
+mutation MLogin ($username: String!, $password: String!) {
+    login(username:$username, password:$password) {
+        username
+        firstname
+        lastname
+        email
+        token
+        verified
+    }
+}
+
+
